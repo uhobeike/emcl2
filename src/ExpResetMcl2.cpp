@@ -96,7 +96,7 @@ double ExpResetMcl2::nonPenetrationRate(int skip, LikelihoodFieldMap *map, Scan 
 	}
 	shift++;
 
-	std::cout << penetrating << " " << counter << std::endl;
+	// std::cout << penetrating << " " << counter << std::endl;
 	return (double)(counter - penetrating) / counter;
 }
 
