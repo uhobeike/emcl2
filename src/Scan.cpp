@@ -20,6 +20,10 @@ Scan& Scan::operator=(const Scan &s)
 	range_max_ = s.range_max_;
 	range_min_ = s.range_min_;
 
+  scan_mask_angle_begin_ = s.scan_mask_angle_begin_;
+  scan_mask_angle_middle_ = s.scan_mask_angle_middle_;
+  scan_mask_angle_end_ = s.scan_mask_angle_end_;
+
 	// It's not thread safe.
 	ranges_.clear();
 	copy(s.ranges_.begin(), s.ranges_.end(), back_inserter(ranges_) );

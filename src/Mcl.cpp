@@ -6,6 +6,8 @@
 #include <iostream>
 #include <stdlib.h>
 #include <cmath>
+#include <random>
+#include <fstream>
 
 namespace emcl2 {
 
@@ -250,10 +252,46 @@ void Mcl::resetWeight(void)
 void Mcl::initialize(double x, double y, double t)
 {
 	Pose new_pose(x, y, t);
-	for(auto &p : particles_)
+  Scan scan = scan_;
+	for(auto &p : particles_){
 		p.p_ = new_pose;
+    p.s_ = randomScanRange(scan);
+
+    std::cout << p.s_.scan_mask_angle_begin_ 
+              << " ,"
+              << p.s_.scan_mask_angle_end_
+              << " ,"
+              << abs(p.s_.scan_mask_angle_end_ - p.s_.scan_mask_angle_begin_) 
+              << " ,"
+              << p.s_.scan_mask_angle_middle_ << "\n";
+  }
+
+  exit(1);
 
 	resetWeight();
+}
+
+Scan Mcl::randomScanRange(Scan scan)
+{
+  std::random_device seed_gen;
+  std::default_random_engine engine(seed_gen());
+
+  std::uniform_int_distribution<> dist_angle(0, scan.ranges_.size());
+
+  scan.scan_mask_angle_begin_ = dist_angle(engine);
+
+  // 0~40 angle
+  std::uniform_int_distribution<> dist_angle_size(0, scan.ranges_.size()/9);
+
+  scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + dist_angle_size(engine);
+
+  scan.scan_mask_angle_middle_ = false;
+  if (scan.scan_mask_angle_end_ >= scan.ranges_.size()){
+    scan.scan_mask_angle_middle_ = true;
+    scan.scan_mask_angle_end_ = scan.scan_mask_angle_end_ - static_cast<int>(scan.ranges_.size()); 
+  }
+
+  return scan;
 }
 
 void Mcl::simpleReset(void)
