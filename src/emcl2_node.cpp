@@ -21,6 +21,7 @@ EMcl2Node::EMcl2Node() : private_nh_("~")
 
 	init_request_ = false;
 	simple_reset_request_ = false;
+	get_scan_ = false;
 }
 
 EMcl2Node::~EMcl2Node()
@@ -113,8 +114,9 @@ std::shared_ptr<LikelihoodFieldMap> EMcl2Node::initMap(void)
 
 void EMcl2Node::cbScan(const sensor_msgs::LaserScan::ConstPtr &msg)
 {
-    scan_frame_id_ = msg->header.frame_id;
-    pf_->setScan(msg);
+		scan_frame_id_ = msg->header.frame_id;
+		pf_->setScan(msg);
+		get_scan_ = true;
 }
 
 void EMcl2Node::initialPoseReceived(const geometry_msgs::PoseWithCovarianceStampedConstPtr& msg)
@@ -123,6 +125,11 @@ void EMcl2Node::initialPoseReceived(const geometry_msgs::PoseWithCovarianceStamp
 	init_x_ = msg->pose.pose.position.x;
 	init_y_ = msg->pose.pose.position.y;
 	init_t_ = tf2::getYaw(msg->pose.pose.orientation);
+}
+
+void EMcl2Node::initialScanRandomAngle()
+{
+	pf_->initialize(init_x_, init_y_, init_t_);
 }
 
 void EMcl2Node::loop(void)
@@ -316,9 +323,14 @@ int main(int argc, char **argv)
 	ros::init(argc, argv, "mcl_node");
 	emcl2::EMcl2Node node;
 
+	static bool init_flag = true;
 	ros::Rate loop_rate(node.getOdomFreq());
 	while (ros::ok()){
-		node.loop();
+		if(node.get_scan_ && init_flag){
+			node.initialScanRandomAngle();
+			init_flag = false;
+		}
+    node.loop();
 		ros::spinOnce();
 		loop_rate.sleep();
 	}

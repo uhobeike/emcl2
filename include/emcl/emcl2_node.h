@@ -26,6 +26,8 @@ public:
 
 	void loop(void);
 	int getOdomFreq(void);
+	void initialScanRandomAngle();
+	bool get_scan_;
 private:
 	std::shared_ptr<ExpResetMcl2> pf_;
 	ros::NodeHandle nh_;

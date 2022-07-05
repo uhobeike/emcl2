@@ -64,9 +64,10 @@ void ExpResetMcl2::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, 
 	if(valid_beams == 0)
 		return;
 
-	for(auto &p : particles_)
+	for(auto &p : particles_){
+		std::cout << p.s_.scan_mask_angle_middle_ << "\n";
 		p.w_ *= p.likelihood(map_.get(), scan);
-
+	}
 	alpha_ = nonPenetrationRate( (int)(particles_.size()*extraction_rate_), map_.get(), scan);
 	ROS_INFO("ALPHA: %f / %f", alpha_, alpha_threshold_);
 	if(alpha_ < alpha_threshold_){

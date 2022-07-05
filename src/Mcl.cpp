@@ -256,17 +256,7 @@ void Mcl::initialize(double x, double y, double t)
 	for(auto &p : particles_){
 		p.p_ = new_pose;
     p.s_ = randomScanRange(scan);
-
-    std::cout << p.s_.scan_mask_angle_begin_ 
-              << " ,"
-              << p.s_.scan_mask_angle_end_
-              << " ,"
-              << abs(p.s_.scan_mask_angle_end_ - p.s_.scan_mask_angle_begin_) 
-              << " ,"
-              << p.s_.scan_mask_angle_middle_ << "\n";
   }
-
-  exit(1);
 
 	resetWeight();
 }
