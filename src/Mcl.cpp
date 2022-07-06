@@ -30,6 +30,9 @@ Mcl::Mcl(const Pose &p, int num, const Scan &scan,
 	processed_seq_ = -1;
 	alpha_ = 1.0;
 
+	beam_matching_score_sum_= 0;
+	valid_beam_sum_ = 0;
+
 	for(int i=0;i<(1<<16);i++){
 		cos_[i] = cos(M_PI*i/(1<<15));
 		sin_[i] = sin(M_PI*i/(1<<15));

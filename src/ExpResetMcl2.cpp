@@ -64,23 +64,37 @@ void ExpResetMcl2::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, 
 	if(valid_beams == 0)
 		return;
 
+	beam_matching_score_sum_ = 0;
+	valid_beam_sum_= 0;
 	for(auto &p : particles_){
-		std::cout << p.s_.scan_mask_angle_middle_ << "\n";
-		p.w_ *= p.likelihood(map_.get(), scan);
+		double beam_matching_score;
+		p.s_ += scan;
+		beam_matching_score= p.likelihood(map_.get(), p.s_, valid_beam_sum_);
+		p.w_ *= beam_matching_score;
+		beam_matching_score_sum_ += beam_matching_score;
 	}
-	alpha_ = nonPenetrationRate( (int)(particles_.size()*extraction_rate_), map_.get(), scan);
+
+	// alpha_ = nonPenetrationRate( (int)(particles_.size()*extraction_rate_), map_.get(), scan);
+	// alpha_ = normalizeBelief()/valid_beams;
+	normalizeBelief();
+	alpha_ = beam_matching_score_sum_/valid_beam_sum_;
+
 	ROS_INFO("ALPHA: %f / %f", alpha_, alpha_threshold_);
 	if(alpha_ < alpha_threshold_){
 		ROS_INFO("RESET");
 		expansionReset();
 		for(auto &p : particles_)
-			p.w_ *= p.likelihood(map_.get(), scan);
+			p.w_ *= p.likelihood(map_.get(), p.s_);
 	}
 
-	if(normalizeBelief() > 0.000001)
+	if(normalizeBelief() > 0.000001){
 		resampling();
-	else
+		std::cout << "resmpling!" << "\n";
+	}
+	else{
 		resetWeight();
+		std::cout << "resetWeight!!!???" << "\n";
+	}
 
 	processed_seq_ = scan_.seq_;
 }

@@ -45,6 +45,9 @@ public:
 
 	static double cos_[(1<<16)];
 	static double sin_[(1<<16)];
+
+	double beam_matching_score_sum_;
+	int valid_beam_sum_;
 protected:
 	Pose *last_odom_;
 	Pose *prev_odom_;
