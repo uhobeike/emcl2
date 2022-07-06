@@ -74,6 +74,17 @@ void Mcl::resampling(void)
 
 	for(int i=0; i<particles_.size(); i++)
 		particles_[i] = old[chosen[i]];
+
+	auto rng = std::default_random_engine{};
+  std::shuffle(std::begin(particles_), std::end(particles_), rng);
+
+	int loop_cnt = 0;
+  for(auto& p: particles_){
+		p.s_ = randomScanRange(p.s_);
+		++loop_cnt;
+		if(loop_cnt == 50)
+			break;
+  }
 }
 
 void Mcl::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, bool inv)
