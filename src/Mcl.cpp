@@ -72,19 +72,43 @@ void Mcl::resampling(void)
 		chosen.push_back(tick);
 	}
 
-	for(int i=0; i<particles_.size(); i++)
+	for(int i=0; i<particles_.size(); i++){
 		particles_[i] = old[chosen[i]];
+		particles_[i].s_ = old[chosen[i]].s_;
+	}
 
-	auto rng = std::default_random_engine{};
-  std::shuffle(std::begin(particles_), std::end(particles_), rng);
+	// std::random_device seed_gen;
+  // std::mt19937 engine(seed_gen());
+  // std::shuffle(std::begin(particles_), std::end(particles_), engine);
 
-	int loop_cnt = 0;
-  for(auto& p: particles_){
-		p.s_ = randomScanRange(p.s_);
-		++loop_cnt;
-		if(loop_cnt == 50)
-			break;
-  }
+	// int loop_cnt = 0;
+  // for(auto& p: particles_){
+	// 	p.s_ = randomScanRange(p.s_);
+	// 	++loop_cnt;
+	// 	if(loop_cnt == 100)
+	// 		break;
+  // }
+
+  constexpr int MIN = 1;
+	constexpr int MAX = 500;
+	constexpr int RAND_NUMS_TO_GENERATE = 50;
+	
+	std::random_device rd;
+  std::mt19937 eng(rd());
+  std::uniform_int_distribution<int> distr(MIN, MAX);
+	std::vector<int> result;
+
+	for (int i=0;i<RAND_NUMS_TO_GENERATE;i++){
+		result.push_back(distr(eng));
+	}
+
+  int random_scan_cnt = 0;
+	for(auto &p : particles_){
+    random_scan_cnt++;
+		if (result.end() != std::find(result.begin(), result.end(), random_scan_cnt)){
+			p.s_ = randomScanRange(p.s_);
+		}
+	}
 }
 
 void Mcl::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, bool inv)
@@ -285,9 +309,11 @@ Scan Mcl::randomScanRange(Scan scan)
   scan.scan_mask_angle_begin_ = dist_angle(engine);
 
   // 0~40 angle
-  std::uniform_int_distribution<> dist_angle_size(0, scan.ranges_.size()/9);
+  // std::uniform_int_distribution<> dist_angle_size(0, scan.ranges_.size()/9);
 
-  scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + dist_angle_size(engine);
+  // scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + dist_angle_size(engine);
+
+  scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 90;
 
   scan.scan_mask_angle_middle_ = false;
   if (scan.scan_mask_angle_end_ >= scan.ranges_.size()){

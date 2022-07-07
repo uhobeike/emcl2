@@ -61,11 +61,16 @@ double Particle::likelihood(LikelihoodFieldMap *map, Scan &scan, int &valid_beam
 			continue;
 		if(scan.scan_mask_angle_middle_)
 			if ((scan.scan_mask_angle_begin_ <= i && i <= scan.ranges_.size()) 
-					&& (0 >= i && i <= scan.scan_mask_angle_end_))
+					|| (0 <= i && i <= scan.scan_mask_angle_end_)){
+				// std::cout << "??";
 				continue;
-		else
-			if (scan.scan_mask_angle_begin_ <= i && i <= scan.scan_mask_angle_end_)
+			}
+		if(not scan.scan_mask_angle_middle_){
+			if ((scan.scan_mask_angle_begin_ <= i) && (i <= scan.scan_mask_angle_end_)){
+				// std::cout << "!!";
 				continue;
+			}
+		}
 		
 		uint16_t a = scan.directions_16bit_[i] + t + lidar_yaw;
 		double lx = lidar_x + scan.ranges_[i] * Mcl::cos_[a];
@@ -73,7 +78,10 @@ double Particle::likelihood(LikelihoodFieldMap *map, Scan &scan, int &valid_beam
 
 		ans += map->likelihood(lx, ly);
 		++valid_beam_sum;
+		// std::cout << i << " ";
 	}
+	// std::cout << "\n";
+	// std::cout << "\n";
 
 	return ans;
 }

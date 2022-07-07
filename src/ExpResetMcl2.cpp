@@ -66,11 +66,14 @@ void ExpResetMcl2::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, 
 
 	beam_matching_score_sum_ = 0;
 	valid_beam_sum_= 0;
+	int cnt = 0;
 	for(auto &p : particles_){
 		double beam_matching_score;
 		p.s_ += scan;
-		beam_matching_score= p.likelihood(map_.get(), p.s_, valid_beam_sum_);
+		std::cout << ++cnt << " ," << p.s_.scan_mask_angle_begin_ << " ," << p.s_.scan_mask_angle_end_ << " ," << p.s_.scan_mask_angle_middle_;
+		beam_matching_score = p.likelihood(map_.get(), p.s_, valid_beam_sum_);
 		p.w_ *= beam_matching_score;
+		std::cout << " ," << beam_matching_score << " ," << p.w_ << "\n"; 
 		beam_matching_score_sum_ += beam_matching_score;
 	}
 
@@ -89,11 +92,9 @@ void ExpResetMcl2::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, 
 
 	if(normalizeBelief() > 0.000001){
 		resampling();
-		std::cout << "resmpling!" << "\n";
 	}
 	else{
 		resetWeight();
-		std::cout << "resetWeight!!!???" << "\n";
 	}
 
 	processed_seq_ = scan_.seq_;
