@@ -278,11 +278,12 @@ void Mcl::resetWeight(void)
 void Mcl::initialize(double x, double y, double t)
 {
 	Pose new_pose(x, y, t);
-  Scan scan = scan_;
-	for(auto &p : particles_){
-		p.p_ = new_pose;
-    p.s_ = randomScanRange(scan);
-  }
+	Scan scan = scan_;
+	// unknown-obstacle-measures-targets
+	// for(auto &p : particles_){
+	// 	p.p_ = new_pose;
+	// 	p.s_ = randomScanRange(scan);
+	// }
 
 	resetWeight();
 }

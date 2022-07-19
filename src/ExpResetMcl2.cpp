@@ -70,8 +70,8 @@ void ExpResetMcl2::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, 
 	for(auto &p : particles_){
 		double beam_matching_score;
 		p.s_ += scan;
-		std::cout << ++cnt << " ," << p.s_.scan_mask_angle_begin_ << " ," << p.s_.scan_mask_angle_end_ << " ," << p.s_.scan_mask_angle_middle_;
-		beam_matching_score = p.likelihood(map_.get(), p.s_, valid_beam_sum_);
+		std::cout << ++cnt;
+		beam_matching_score = p.likelihood(map_.get(), scan, valid_beam_sum_);
 		p.w_ *= beam_matching_score;
 		std::cout << " ," << beam_matching_score << " ," << p.w_ << "\n"; 
 		beam_matching_score_sum_ += beam_matching_score;
