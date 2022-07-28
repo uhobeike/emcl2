@@ -6,6 +6,7 @@
 
 #include "emcl/Pose.h"
 #include "emcl/LikelihoodFieldMap.h"
+#include "emcl/Matplot.h"
 
 namespace emcl2 {
 
@@ -18,6 +19,8 @@ public:
 
 	double likelihood(LikelihoodFieldMap *map, Scan &scan);
 	double likelihood(LikelihoodFieldMap *map, Scan &scan, int &valid_beam_sum);
+	double likelihood(LikelihoodFieldMap *map, Scan &scan, int &valid_beam_sum, std::vector<int> &scan_angle);
+
 	bool wallConflict(LikelihoodFieldMap *map, Scan &scan, double threshold, bool replace);
 	Pose p_;
   Scan s_;

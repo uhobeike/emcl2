@@ -16,6 +16,8 @@ EMcl2Node::EMcl2Node() : private_nh_("~")
 {
 	initCommunication();
 	initPF();
+	matplot();
+
 
 	private_nh_.param("odom_freq", odom_freq_, 20);
 
@@ -80,6 +82,27 @@ void EMcl2Node::initPF(void)
 	pf_.reset(new ExpResetMcl2(init_pose, num_particles, scan, om, map,
 				alpha_th, ex_rad_pos, ex_rad_ori,
 				extraction_rate, range_threshold, sensor_reset));
+}
+
+void EMcl2Node::matplot(void)
+{
+	// Matplot mplt;
+	// timer_ = nh_.createTimer(
+    //   ros::Duration(0.01), [&](auto &) {
+	// 	std::vector<std::vector<int>> particle_scan_angles;
+	// 	particle_scan_angles = pf_->getParticleScanAngles();
+	// 	int num = 0;
+	// 	mplt.clear();
+
+	// 	for (auto particle_scan_angle : particle_scan_angles)
+	// 	{
+	// 		++num;
+	// 		std::vector<int> particle_num_v(particle_scan_angle.size(),num);
+
+	// 		mplt.particle_usescan_angle_plot(particle_num_v, particle_scan_angle);
+	// 	}
+	// 	mplt.show();
+	// });
 }
 
 std::shared_ptr<OdomModel> EMcl2Node::initOdometry(void)
@@ -181,6 +204,7 @@ void EMcl2Node::loop(void)
 	std_msgs::Float32 alpha_msg;
 	alpha_msg.data = static_cast<float>(pf_->alpha_);
 	alpha_pub_.publish(alpha_msg);
+	// matplot();
 }
 
 void EMcl2Node::publishPose(double x, double y, double t,
@@ -322,6 +346,10 @@ int main(int argc, char **argv)
 
 	ros::init(argc, argv, "mcl_node");
 	emcl2::EMcl2Node node;
+	ros::NodeHandle pnh("~");
+
+	ros::AsyncSpinner spinner(pnh.param("num_callback_threads", 4));
+  	spinner.start();
 
 	static bool init_flag = true;
 	ros::Rate loop_rate(node.getOdomFreq());
@@ -330,12 +358,9 @@ int main(int argc, char **argv)
 			node.initialScanRandomAngle();
 			init_flag = false;
 		}
-    node.loop();
-		ros::spinOnce();
+    	node.loop();
 		loop_rate.sleep();
 	}
-
-	ros::spin();
 
 	return 0;
 }

@@ -27,7 +27,9 @@ public:
 	void loop(void);
 	int getOdomFreq(void);
 	void initialScanRandomAngle();
+	void matplot();
 	bool get_scan_;
+	ros::Timer timer_;
 private:
 	std::shared_ptr<ExpResetMcl2> pf_;
 	ros::NodeHandle nh_;

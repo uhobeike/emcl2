@@ -3,6 +3,7 @@
 //Some lines are derived from https://github.com/ros-planning/navigation/tree/noetic-devel/amcl. 
 
 #include "emcl/ExpResetMcl2.h"
+#include "emcl/Matplot.h"
 #include <ros/ros.h>
 #include <iostream>
 #include <stdlib.h>
@@ -66,21 +67,31 @@ void ExpResetMcl2::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, 
 
 	beam_matching_score_sum_ = 0;
 	valid_beam_sum_= 0;
-	int cnt = 0;
+	std::vector<std::vector<int>> particle_scan_angles;
+	particle_scan_angles.clear();
 	for(auto &p : particles_){
 		double beam_matching_score;
 		p.s_ += scan;
-		std::cout << ++cnt << " ," << p.s_.scan_mask_angle_begin_ << " ," << p.s_.scan_mask_angle_end_ << " ," << p.s_.scan_mask_angle_middle_;
-		beam_matching_score = p.likelihood(map_.get(), p.s_, valid_beam_sum_);
+		std::vector<int> scan_angle;
+		beam_matching_score = p.likelihood(map_.get(), p.s_, valid_beam_sum_, scan_angle);
+		// std::cout << scan_angle.size() << ", ";
 		p.w_ *= beam_matching_score;
-		std::cout << " ," << beam_matching_score << " ," << p.w_ << "\n"; 
 		beam_matching_score_sum_ += beam_matching_score;
+		particle_scan_angles.push_back(scan_angle);
 	}
-
-	// alpha_ = nonPenetrationRate( (int)(particles_.size()*extraction_rate_), map_.get(), scan);
-	// alpha_ = normalizeBelief()/valid_beams;
+	particle_scan_angles_ = particle_scan_angles;
+	
 	normalizeBelief();
 	alpha_ = beam_matching_score_sum_/valid_beam_sum_;
+
+	static Matplot mplt;
+	static int cnt = 0; 
+	std::vector<double> cicle{1};
+	std::vector<double> alpha{1};
+	cicle.at(0) = cnt++;
+	alpha.at(0) = alpha_;
+	mplt.particle_usescan_angle_plot(cicle, alpha);
+	mplt.show();
 
 	ROS_INFO("ALPHA: %f / %f", alpha_, alpha_threshold_);
 	if(alpha_ < alpha_threshold_){
@@ -127,6 +138,11 @@ void ExpResetMcl2::expansionReset(void)
 		p.p_.t_ += 2*((double)rand()/RAND_MAX - 0.5)*expansion_radius_orientation_;
 		p.w_ = 1.0/particles_.size();
 	}
+}
+
+std::vector<std::vector<int>> ExpResetMcl2::getParticleScanAngles(void)
+{
+	return particle_scan_angles_;
 }
 
 }

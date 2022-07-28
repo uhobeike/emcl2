@@ -4,7 +4,9 @@
 
 #include "emcl/Particle.h"
 #include "emcl/Mcl.h"
+#include "emcl/Matplot.h"
 #include <cmath>
+#include <ros/ros.h>
 
 namespace emcl2 {
 
@@ -62,12 +64,10 @@ double Particle::likelihood(LikelihoodFieldMap *map, Scan &scan, int &valid_beam
 		if(scan.scan_mask_angle_middle_)
 			if ((scan.scan_mask_angle_begin_ <= i && i <= scan.ranges_.size()) 
 					|| (0 <= i && i <= scan.scan_mask_angle_end_)){
-				// std::cout << "??";
 				continue;
 			}
 		if(not scan.scan_mask_angle_middle_){
 			if ((scan.scan_mask_angle_begin_ <= i) && (i <= scan.scan_mask_angle_end_)){
-				// std::cout << "!!";
 				continue;
 			}
 		}
@@ -78,10 +78,43 @@ double Particle::likelihood(LikelihoodFieldMap *map, Scan &scan, int &valid_beam
 
 		ans += map->likelihood(lx, ly);
 		++valid_beam_sum;
-		// std::cout << i << " ";
 	}
-	// std::cout << "\n";
-	// std::cout << "\n";
+	return ans;
+}
+
+double Particle::likelihood(LikelihoodFieldMap *map, Scan &scan, int &valid_beam_sum, std::vector<int> &scan_angle)
+{
+	uint16_t t = p_.get16bitRepresentation();
+	double lidar_x = p_.x_ + scan.lidar_pose_x_*Mcl::cos_[t] 
+				- scan.lidar_pose_y_*Mcl::sin_[t];
+	double lidar_y = p_.y_ + scan.lidar_pose_x_*Mcl::sin_[t] 
+				+ scan.lidar_pose_y_*Mcl::cos_[t];
+	uint16_t lidar_yaw = Pose::get16bitRepresentation(scan.lidar_pose_yaw_);
+
+	double ans = 0.0;
+	for(int i=0;i<scan.ranges_.size();i+=scan.scan_increment_){
+		if(not scan.valid(scan.ranges_[i]))
+			continue;
+		if(scan.scan_mask_angle_middle_)
+			if ((scan.scan_mask_angle_begin_ <= i && i <= scan.ranges_.size()) 
+					|| (0 <= i && i <= scan.scan_mask_angle_end_)){
+				continue;
+			}
+		if(not scan.scan_mask_angle_middle_){
+			if ((scan.scan_mask_angle_begin_ <= i) && (i <= scan.scan_mask_angle_end_)){
+				continue;
+			}
+		}
+		
+		uint16_t a = scan.directions_16bit_[i] + t + lidar_yaw;
+		double lx = lidar_x + scan.ranges_[i] * Mcl::cos_[a];
+		double ly = lidar_y + scan.ranges_[i] * Mcl::sin_[a];
+
+		ans += map->likelihood(lx, ly);
+		++valid_beam_sum;
+		scan_angle.push_back(i);
+	}
+	// std::cout << scan_angle.size() << ", ";
 
 	return ans;
 }

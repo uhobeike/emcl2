@@ -21,6 +21,8 @@ public:
 	~ExpResetMcl2();
 
 	void sensorUpdate(double lidar_x, double lidar_y, double lidar_t, bool inv);
+	std::vector<std::vector<int>> getParticleScanAngles();
+	std::vector<std::vector<int>> particle_scan_angles_;
 private:
 	double alpha_threshold_;
 	double expansion_radius_position_;
