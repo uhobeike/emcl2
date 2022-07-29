@@ -3,6 +3,7 @@
 //Some lines are derived from https://github.com/ros-planning/navigation/tree/noetic-devel/amcl. 
 
 #include "emcl/ExpResetMcl2.h"
+#include "emcl/Matplot.h"
 #include <ros/ros.h>
 #include <iostream>
 #include <stdlib.h>
@@ -66,14 +67,11 @@ void ExpResetMcl2::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, 
 
 	beam_matching_score_sum_ = 0;
 	valid_beam_sum_= 0;
-	int cnt = 0;
 	for(auto &p : particles_){
 		double beam_matching_score;
 		p.s_ += scan;
-		std::cout << ++cnt;
 		beam_matching_score = p.likelihood(map_.get(), scan, valid_beam_sum_);
 		p.w_ *= beam_matching_score;
-		std::cout << " ," << beam_matching_score << " ," << p.w_ << "\n"; 
 		beam_matching_score_sum_ += beam_matching_score;
 	}
 
@@ -81,6 +79,15 @@ void ExpResetMcl2::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, 
 	// alpha_ = normalizeBelief()/valid_beams;
 	normalizeBelief();
 	alpha_ = beam_matching_score_sum_/valid_beam_sum_;
+
+	static Matplot mplt;
+	static int cnt = 0; 
+	std::vector<double> cicle{1};
+	std::vector<double> alpha{1};
+	cicle.at(0) = cnt++;
+	alpha.at(0) = alpha_;
+	mplt.particle_usescan_angle_plot(cicle, alpha);
+	mplt.show();
 
 	ROS_INFO("ALPHA: %f / %f", alpha_, alpha_threshold_);
 	if(alpha_ < alpha_threshold_){
