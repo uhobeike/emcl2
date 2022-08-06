@@ -301,7 +301,7 @@ Scan Mcl::randomScanRange(Scan scan)
 
   // scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + dist_angle_size(engine);
 
-  scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 300;
+  scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 340;
 
   scan.scan_mask_angle_middle_ = false;
   if (scan.scan_mask_angle_end_ >= scan.ranges_.size()){
