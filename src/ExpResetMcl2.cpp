@@ -69,6 +69,10 @@ void ExpResetMcl2::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, 
 	valid_beam_sum_= 0;
 	std::vector<std::vector<int>> particle_scan_angles;
 	particle_scan_angles.clear();
+
+	int cnt = 0; 
+	std::vector<double> num;
+	std::vector<double> weight;
 	for(auto &p : particles_){
 		double beam_matching_score;
 		p.s_ += scan;
@@ -76,6 +80,8 @@ void ExpResetMcl2::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, 
 		beam_matching_score = p.likelihood(map_.get(), p.s_, valid_beam_sum_, scan_angle);
 		// std::cout << scan_angle.size() << ", ";
 		p.w_ *= beam_matching_score;
+		num.push_back(cnt++);
+		weight.push_back(p.w_);
 		beam_matching_score_sum_ += beam_matching_score;
 		particle_scan_angles.push_back(scan_angle);
 	}
@@ -85,13 +91,12 @@ void ExpResetMcl2::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, 
 	alpha_ = beam_matching_score_sum_/valid_beam_sum_;
 
 	static Matplot mplt;
-	static int cnt = 0; 
-	std::vector<double> cicle{1};
-	std::vector<double> alpha{1};
-	cicle.at(0) = cnt++;
-	alpha.at(0) = alpha_;
-	mplt.particle_usescan_angle_plot(cicle, alpha);
-	mplt.show();
+
+	// cicle.at(0) = cnt++;
+	// alpha.at(0) = alpha_;
+	// mplt.particle_usescan_angle_plot(cicle, alpha);
+	// mplt.show();
+	mplt.particle_weight_plot(num,weight);
 
 	ROS_INFO("ALPHA: %f / %f", alpha_, alpha_threshold_);
 	if(alpha_ < alpha_threshold_){
