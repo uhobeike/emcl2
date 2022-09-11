@@ -9,6 +9,7 @@
 #include "geometry_msgs/PoseArray.h"
 #include "nav_msgs/GetMap.h"
 #include "std_msgs/Float32.h"
+#include <chrono>
 
 namespace emcl2 {
 
@@ -180,20 +181,24 @@ void EMcl2Node::loop(void)
 		return;
 	}
 
-	/*
-	struct timespec ts_start, ts_end;
-	clock_gettime(CLOCK_REALTIME, &ts_start);
-	*/
+    std::chrono::system_clock::time_point start, end;
+    start = std::chrono::system_clock::now();
 	pf_->sensorUpdate(lx, ly, lt, inv);
-	/*
-	clock_gettime(CLOCK_REALTIME, &ts_end);
-	struct tm tm;
-	localtime_r( &ts_start.tv_sec, &tm);
-	printf("START: %02d.%09ld\n", tm.tm_sec, ts_start.tv_nsec);
-	localtime_r( &ts_end.tv_sec, &tm);
-	printf("END: %02d.%09ld\n", tm.tm_sec, ts_end.tv_nsec);
-	*/
+	end = std::chrono::system_clock::now();
+	double time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
+	static std::vector<double> data;
+	if (time > 0){
+		data.push_back(time);
+		double ave = 0.0, var = 0.0;
+		for(const auto &x : data){
+			ave += x;
+			var += x * x;
+		}
+		ave /= data.size();
+		var = var / data.size() - ave * ave;
+		std::cout << "平均：" << ave << ", 標準偏差：" << std::sqrt(var) << std::endl;
+	}
 	double x_var, y_var, t_var, xy_cov, yt_cov, tx_cov;
 	pf_->meanPose(x, y, t, x_var, y_var, t_var, xy_cov, yt_cov, tx_cov);
 
