@@ -41,7 +41,7 @@ public:
 
 	void simpleReset(void);
 
-  Scan randomScanRange(Scan scan);
+  	Scan randomScanRange(Scan scan);
 
 	static double cos_[(1<<16)];
 	static double sin_[(1<<16)];

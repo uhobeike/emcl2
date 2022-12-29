@@ -112,9 +112,8 @@ double Particle::likelihood(LikelihoodFieldMap *map, Scan &scan, int &valid_beam
 
 		ans += map->likelihood(lx, ly);
 		++valid_beam_sum;
-		scan_angle.push_back(i);
+		scan_angle[i]++;
 	}
-	// std::cout << scan_angle.size() << ", ";
 
 	return ans;
 }

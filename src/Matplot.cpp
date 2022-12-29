@@ -5,7 +5,8 @@ namespace plt = matplotlibcpp;
 namespace emcl2 {
 void Matplot::particle_usescan_angle_plot(std::vector<int> particle_num,
                                           std::vector<int> scan_angle) {
-  plt::plot(particle_num, scan_angle, "k|");
+  plt::plot(particle_num, scan_angle, "ko");
+  show();
 }
 
 void Matplot::particle_usescan_angle_plot(std::vector<double> particle_num,
@@ -21,9 +22,9 @@ void Matplot::particle_weight_plot(std::vector<double> particle_num,
 }
 
 void Matplot::show() {
-  plt::ylim(0.0, 1.0);
   plt::legend();
-  plt::pause(0.1);
+  plt::pause(0.001);
+  plt::clf();
 }
 
 void Matplot::clear() {
