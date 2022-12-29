@@ -17,7 +17,7 @@ EMcl2Node::EMcl2Node() : private_nh_("~")
 {
 	initCommunication();
 	initPF();
-	matplot();
+	// matplot();
 
 
 	private_nh_.param("odom_freq", odom_freq_, 20);
@@ -85,26 +85,34 @@ void EMcl2Node::initPF(void)
 				extraction_rate, range_threshold, sensor_reset));
 }
 
-void EMcl2Node::matplot(void)
-{
-	// Matplot mplt;
-	// timer_ = nh_.createTimer(
-    //   ros::Duration(0.01), [&](auto &) {
-	// 	std::vector<std::vector<int>> particle_scan_angles;
-	// 	particle_scan_angles = pf_->getParticleScanAngles();
-	// 	int num = 0;
-	// 	mplt.clear();
+// void EMcl2Node::matplot(void)
+// {
+// 	// Matplot mplt;
 
-	// 	for (auto particle_scan_angle : particle_scan_angles)
-	// 	{
-	// 		++num;
-	// 		std::vector<int> particle_num_v(particle_scan_angle.size(),num);
+// 	timer_ = nh_.createTimer(
+//       ros::Duration(0.01), [&](auto &) {
+// 		std::shared_ptr<Matplot> mplt;
+// 		mplt.reset();
+// 		mplt->show();
+// 		mplt->clear();
+// 		std::vector<std::vector<int>> particle_scan_angles;
+// 		static bool once_flag = false;
+// 		if (!once_flag)
+// 		particle_scan_angles = pf_->getParticleScanAngles();
+// 		ROS_ERROR("%d",once_flag);
+// 		once_flag = true;
+// 		int num = 0;
 
-	// 		mplt.particle_usescan_angle_plot(particle_num_v, particle_scan_angle);
-	// 	}
-	// 	mplt.show();
-	// });
-}
+// 		for (auto particle_scan_angle : particle_scan_angles)
+// 		{
+// 			++num;
+// 			std::vector<int> particle_num_v(particle_scan_angle.size(),num);
+
+// 			mplt->particle_usescan_angle_plot(particle_num_v, particle_scan_angle);
+// 		}
+// 		mplt->show();
+// 	});
+// }
 
 std::shared_ptr<OdomModel> EMcl2Node::initOdometry(void)
 {
@@ -188,7 +196,9 @@ void EMcl2Node::loop(void)
 	double time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
 	static std::vector<double> data;
-	if (time > 0){
+	static int cnt = 0;
+	cnt++ ;
+	if (time > 0 && cnt > 100){
 		data.push_back(time);
 		double ave = 0.0, var = 0.0;
 		for(const auto &x : data){

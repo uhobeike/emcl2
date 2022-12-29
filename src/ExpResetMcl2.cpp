@@ -90,13 +90,13 @@ void ExpResetMcl2::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, 
 	normalizeBelief();
 	alpha_ = beam_matching_score_sum_/valid_beam_sum_;
 
-	static Matplot mplt;
+	// static Matplot mplt;
 
 	// cicle.at(0) = cnt++;
 	// alpha.at(0) = alpha_;
 	// mplt.particle_usescan_angle_plot(cicle, alpha);
 	// mplt.show();
-	mplt.particle_weight_plot(num,weight);
+	// mplt.particle_weight_plot(num,weight);
 
 	ROS_INFO("ALPHA: %f / %f", alpha_, alpha_threshold_);
 	if(alpha_ < alpha_threshold_){

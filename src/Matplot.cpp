@@ -16,7 +16,6 @@ void Matplot::particle_usescan_angle_plot(std::vector<double> particle_num,
 void Matplot::particle_weight_plot(std::vector<double> particle_num,
                                    std::vector<double> particle_weight) {
   plt::plot(particle_num, particle_weight, "k.");
-
   show_weight();
   clear_weight();
 }
@@ -24,13 +23,11 @@ void Matplot::particle_weight_plot(std::vector<double> particle_num,
 void Matplot::show() {
   plt::ylim(0.0, 1.0);
   plt::legend();
-  // plt::show();
-  plt::pause(0.01);
+  plt::pause(0.1);
 }
 
 void Matplot::clear() {
   plt::clf();
-  // plt::cla();
 }
 
 void Matplot::show_weight() {
