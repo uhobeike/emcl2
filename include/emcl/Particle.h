@@ -20,6 +20,7 @@ public:
 	double likelihood(LikelihoodFieldMap *map, Scan &scan);
 	double likelihood(LikelihoodFieldMap *map, Scan &scan, int &valid_beam_sum);
 	double likelihood(LikelihoodFieldMap *map, Scan &scan, int &valid_beam_sum, std::vector<int> &scan_angle);
+	double likelihood2(LikelihoodFieldMap *map, Scan &scan, int &valid_beam_sum, std::vector<uint8_t> &scan_angle);
 
 	bool wallConflict(LikelihoodFieldMap *map, Scan &scan, double threshold, bool replace);
 	Pose p_;

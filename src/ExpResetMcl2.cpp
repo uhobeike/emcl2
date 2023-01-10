@@ -74,6 +74,7 @@ void ExpResetMcl2::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, 
 	std::vector<int> scan_angle(360,1);
 	partial_sum(scan_angle.begin(), scan_angle.end(), scan_angle.begin());
 	std::vector<int> scan_angle_cnt(360,0);
+	std::vector<uint8_t> multiple_observation;
 
 	for(auto &p : particles_){
 		double beam_matching_score;
@@ -82,12 +83,34 @@ void ExpResetMcl2::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, 
 		p.w_ *= beam_matching_score;
 		beam_matching_score_sum_ += beam_matching_score;
 	}
+
+	// static Matplot mplt;
+	// mplt.particle_usescan_angle_plot(scan_angle,scan_angle_cnt);
+
+	// if(getMultipleObservation(scan_angle_cnt, multiple_observation)){
+	// 	ROS_ERROR("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+	// 	for(int  multiple_observation: multiple_observation){
+	// 		std::cout << multiple_observation << ",";
+	// 	}
+	// 	for(auto &p : particles_){
+	// 		double beam_matching_score;
+	// 		beam_matching_score = p.likelihood2(map_.get(), p.s_, valid_beam_sum_, multiple_observation);
+	// 		p.w_ *= beam_matching_score;
+	// 		beam_matching_score_sum_ += beam_matching_score;
+	// 	}
+	// }
+	// else{
+	// 	// for(auto &p : particles_){
+	// 	// 	double beam_matching_score;
+	// 	// 	p.s_ += scan;
+	// 	// 	beam_matching_score = p.likelihood(map_.get(), p.s_, valid_beam_sum_, scan_angle_cnt);
+	// 	// 	p.w_ *= beam_matching_score;
+	// 	// 	beam_matching_score_sum_ += beam_matching_score;
+	// 	// }
+	// }
 	
 	normalizeBelief();
 	alpha_ = beam_matching_score_sum_/valid_beam_sum_;
-
-	static Matplot mplt;
-	mplt.particle_usescan_angle_plot(scan_angle,scan_angle_cnt);
 
 	ROS_INFO("ALPHA: %f / %f", alpha_, alpha_threshold_);
 	if(alpha_ < alpha_threshold_){
@@ -97,15 +120,29 @@ void ExpResetMcl2::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, 
 			p.w_ *= p.likelihood(map_.get(), p.s_);
 	}
 
-	if(normalizeBelief() > 0.000001){
+	if(normalizeBelief() > 0.000001)
 		resampling();
-	}
-	else{
+	else
 		resetWeight();
-	}
 
 	processed_seq_ = scan_.seq_;
 }
+
+bool ExpResetMcl2::getMultipleObservation(std::vector<int> &scan_angle_cnt, std::vector<uint8_t> &multiple_observation){
+	int cnt=0;
+	for (auto scan_angle : scan_angle_cnt)
+	{
+		if (scan_angle > 1000)
+			multiple_observation.push_back(cnt);
+		++cnt;  
+	}
+	if (multiple_observation.size() > 1){
+		return true;
+	}
+	else
+		return false;
+}
+
 
 double ExpResetMcl2::nonPenetrationRate(int skip, LikelihoodFieldMap *map, Scan &scan)
 {

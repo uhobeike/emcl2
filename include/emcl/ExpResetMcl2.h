@@ -34,7 +34,9 @@ private:
 
 	void expansionReset(void);
 
-//bool Particle::isPenetrating(
+	//bool Particle::isPenetrating(
+	bool getMultipleObservation(std::vector<int> &scan_angle_cnt, std::vector<u_int8_t> &multiple_observation);
+
 	double nonPenetrationRate(int skip, LikelihoodFieldMap *map, Scan &scan);
 };
 
