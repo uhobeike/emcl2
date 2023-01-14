@@ -20,7 +20,7 @@ public:
 			bool sensor_reset);
 	~ExpResetMcl2();
 
-	void sensorUpdate(double lidar_x, double lidar_y, double lidar_t, bool inv);
+	void sensorUpdate(double lidar_x, double lidar_y, double lidar_t, bool inv, std::vector<double> &most_observations);
 	std::vector<std::vector<int>> getParticleScanAngles();
 	std::vector<std::vector<int>> particle_scan_angles_;
 private:

@@ -38,6 +38,7 @@ private:
 	ros::Publisher particlecloud_pub_;
 	ros::Publisher pose_pub_;
 	ros::Publisher alpha_pub_;
+	ros::Publisher scan_pub_;
 	ros::Subscriber laser_scan_sub_;
 	ros::Subscriber initial_pose_sub_;
 
@@ -55,6 +56,8 @@ private:
 
 	tf2::Transform latest_tf_;
 
+	sensor_msgs::LaserScan scan_;
+
 	int odom_freq_;
 	bool init_request_;
 	bool simple_reset_request_;
@@ -65,6 +68,7 @@ private:
 			double xy_cov, double yt_cov, double tx_cov);
 	void publishOdomFrame(double x, double y, double t);
 	void publishParticles(void);
+	void publishScan(double observation);
 	void sendTf(void);
 	bool getOdomPose(double& x, double& y, double& yaw);
 	bool getLidarPose(double& x, double& y, double& yaw, bool& inv);

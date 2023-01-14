@@ -31,7 +31,7 @@ ExpResetMcl2::~ExpResetMcl2()
 {
 }
 
-void ExpResetMcl2::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, bool inv)
+void ExpResetMcl2::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, bool inv, std::vector<double> &most_observations)
 {
 	if(processed_seq_ == scan_.seq_)
 		return;
@@ -86,6 +86,10 @@ void ExpResetMcl2::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, 
 
 	// static Matplot mplt;
 	// mplt.particle_usescan_angle_plot(scan_angle,scan_angle_cnt);
+
+	std::vector<int>::iterator iter = std::max_element(scan_angle_cnt.begin(), scan_angle_cnt.end());
+	size_t index = std::distance(scan_angle_cnt.begin(), iter);
+	most_observations.push_back(double(index));
 
 	// if(getMultipleObservation(scan_angle_cnt, multiple_observation)){
 	// 	ROS_ERROR("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");

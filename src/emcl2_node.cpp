@@ -36,6 +36,7 @@ void EMcl2Node::initCommunication(void)
 	particlecloud_pub_ = nh_.advertise<geometry_msgs::PoseArray>("particlecloud", 2, true);
 	pose_pub_ = nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("mcl_pose", 2, true);
 	alpha_pub_ = nh_.advertise<std_msgs::Float32>("alpha", 2, true);
+	scan_pub_ = nh_.advertise<sensor_msgs::LaserScan>("most_observation", 2, true);
 	laser_scan_sub_ = nh_.subscribe("scan", 2, &EMcl2Node::cbScan, this);
 	initial_pose_sub_ = nh_.subscribe("initialpose", 2, &EMcl2Node::initialPoseReceived, this);
 
@@ -148,6 +149,7 @@ void EMcl2Node::cbScan(const sensor_msgs::LaserScan::ConstPtr &msg)
 {
 		scan_frame_id_ = msg->header.frame_id;
 		pf_->setScan(msg);
+		scan_ = *msg;
 		get_scan_ = true;
 }
 
@@ -191,7 +193,8 @@ void EMcl2Node::loop(void)
 
     std::chrono::system_clock::time_point start, end;
     start = std::chrono::system_clock::now();
-	pf_->sensorUpdate(lx, ly, lt, inv);
+	std::vector<double> most_observations;
+	pf_->sensorUpdate(lx, ly, lt, inv, most_observations);
 	end = std::chrono::system_clock::now();
 	double time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
@@ -215,6 +218,9 @@ void EMcl2Node::loop(void)
 	publishOdomFrame(x, y, t);
 	publishPose(x, y, t, x_var, y_var, t_var, xy_cov, yt_cov, tx_cov);
 	publishParticles();
+	for (auto observation : most_observations) 
+		publishScan(observation);
+
 
 	std_msgs::Float32 alpha_msg;
 	alpha_msg.data = static_cast<float>(pf_->alpha_);
@@ -298,6 +304,20 @@ void EMcl2Node::publishParticles(void)
 		tf2::convert(q, cloud_msg.poses[i].orientation);
 	}		
 	particlecloud_pub_.publish(cloud_msg);
+}
+
+void EMcl2Node::publishScan(double observation)
+{
+	int cnt = 0;
+	for (auto& scan: scan_.ranges){
+		if(cnt == observation){
+			
+		}
+		else 
+			scan = INFINITY;
+		cnt++;
+	}
+	scan_pub_.publish(scan_);
 }
 
 bool EMcl2Node::getOdomPose(double& x, double& y, double& yaw)
