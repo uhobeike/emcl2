@@ -312,9 +312,9 @@ Scan Mcl::randomScanRange(Scan scan)
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 356; //3
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 357; //2
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 358; //1
-  std::uniform_int_distribution<> ramdom_angle(0, 10);
+  std::uniform_int_distribution<> ramdom_angle(0, 20);
 
-  scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 349 + ramdom_angle(engine); //1~10
+  scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 339 + ramdom_angle(engine); //1~10
 
 
   scan.scan_mask_angle_middle_ = false;
