@@ -8,6 +8,8 @@
 #include <iostream>
 #include <stdlib.h>
 #include <cmath>
+#include <chrono>
+#include <ctime>
 
 namespace emcl2 {
 
@@ -76,6 +78,9 @@ void ExpResetMcl2::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, 
 	std::vector<int> scan_angle_cnt(360,0);
 	std::vector<uint8_t> multiple_observation;
 
+    std::chrono::system_clock::time_point start_2, end_2;
+    start_2 = std::chrono::high_resolution_clock::now();
+	// std::clock_t start = std::clock();
 	for(auto &p : particles_){
 		double beam_matching_score;
 		p.s_ += scan;
@@ -84,52 +89,63 @@ void ExpResetMcl2::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, 
 		beam_matching_score_sum_ += beam_matching_score;
 	}
 
-	// static Matplot mplt;
-	// mplt.particle_usescan_angle_plot(scan_angle,scan_angle_cnt);
+	// std::clock_t end = std::clock();
+	end_2 = std::chrono::high_resolution_clock::now();
+	double time_2 = std::chrono::duration_cast<std::chrono::milliseconds>(end_2 - start_2).count();
+	// double time_2 = static_cast<double>(end - start) / CLOCKS_PER_SEC;
+
+	static std::vector<double> data_2;
+	static int cnt_2 = 0;
+	cnt_2++ ;
+	if (time_2 > 0 && cnt_2 > 100){
+		data_2.push_back(time_2);
+		double ave_2 = 0.0, var_2 = 0.0;
+		for(const auto &x : data_2){
+			ave_2 += x;
+			var_2 += x * x;
+		}
+		ave_2 /= data_2.size();
+		var_2 = var_2 / data_2.size() - ave_2 * ave_2;
+		// std::cout << "重みの計算のみ　平均：" << ave_2 << ", 標準偏差：" << std::sqrt(var_2) << std::endl;
+	}
 
 	std::vector<int>::iterator iter = std::max_element(scan_angle_cnt.begin(), scan_angle_cnt.end());
 	size_t index = std::distance(scan_angle_cnt.begin(), iter);
 	most_observations.push_back(double(index));
-
-	// if(getMultipleObservation(scan_angle_cnt, multiple_observation)){
-	// 	ROS_ERROR("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-	// 	for(int  multiple_observation: multiple_observation){
-	// 		std::cout << multiple_observation << ",";
-	// 	}
-	// 	for(auto &p : particles_){
-	// 		double beam_matching_score;
-	// 		beam_matching_score = p.likelihood2(map_.get(), p.s_, valid_beam_sum_, multiple_observation);
-	// 		p.w_ *= beam_matching_score;
-	// 		beam_matching_score_sum_ += beam_matching_score;
-	// 	}
-	// }
-	// else{
-	// 	// for(auto &p : particles_){
-	// 	// 	double beam_matching_score;
-	// 	// 	p.s_ += scan;
-	// 	// 	beam_matching_score = p.likelihood(map_.get(), p.s_, valid_beam_sum_, scan_angle_cnt);
-	// 	// 	p.w_ *= beam_matching_score;
-	// 	// 	beam_matching_score_sum_ += beam_matching_score;
-	// 	// }
-	// }
 	
+    std::chrono::system_clock::time_point start_3, end_3;
+    start_3 = std::chrono::system_clock::now();
+
 	normalizeBelief();
 	alpha_ = beam_matching_score_sum_/valid_beam_sum_;
-
-	ROS_INFO("ALPHA: %f / %f", alpha_, alpha_threshold_);
-	if(alpha_ < alpha_threshold_){
-		ROS_INFO("RESET");
-		expansionReset();
-		for(auto &p : particles_)
-			p.w_ *= p.likelihood(map_.get(), p.s_);
-	}
 
 	if(normalizeBelief() > 0.000001)
 		resampling();
 	else
 		resetWeight();
 
+	
+	end_3 = std::chrono::system_clock::now();
+	double time_3 = std::chrono::duration_cast<std::chrono::milliseconds>(end_3 - start_3).count();
+
+	static std::vector<double> data_3;
+	static int cnt_3 = 0;
+	cnt_3++ ;
+	if (time_3 > 0 && cnt_3 > 100){
+		data_3.push_back(time_3);
+		double ave_3 = 0.0, var_3 = 0.0;
+		for(const auto &x : data_3){
+			ave_3 += x;
+			var_3 += x * x;
+		}
+		ave_3 /= data_3.size();
+		var_3 = var_3 / data_3.size() - ave_3 * ave_3;
+		// std::cout << "重みの正規化＋リサンプリング＋重みのリセット　平均：" << ave_3 << ", 標準偏差：" << std::sqrt(var_3) << std::endl;
+	}
+
 	processed_seq_ = scan_.seq_;
+
+
 }
 
 bool ExpResetMcl2::getMultipleObservation(std::vector<int> &scan_angle_cnt, std::vector<uint8_t> &multiple_observation){

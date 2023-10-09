@@ -33,6 +33,8 @@ public:
 	void motionUpdate(double x, double y, double t);
 
 	void initialize(double x, double y, double t);
+	void initialize(double x, double y, double t, int cnt);
+
 
 	void setScan(const sensor_msgs::LaserScan::ConstPtr &msg);
 	void meanPose(double &x_mean, double &y_mean, double &t_mean,

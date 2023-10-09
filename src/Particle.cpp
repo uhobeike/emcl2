@@ -7,6 +7,9 @@
 #include "emcl/Matplot.h"
 #include <cmath>
 #include <ros/ros.h>
+#include <chrono>
+
+#include<fstream>
 
 namespace emcl2 {
 
@@ -57,6 +60,8 @@ double Particle::likelihood(LikelihoodFieldMap *map, Scan &scan, int &valid_beam
 				+ scan.lidar_pose_y_*Mcl::cos_[t];
 	uint16_t lidar_yaw = Pose::get16bitRepresentation(scan.lidar_pose_yaw_);
 
+	double test_cnt = 0;
+
 	double ans = 0.0;
 	for(int i=0;i<scan.ranges_.size();i+=scan.scan_increment_){
 		if(not scan.valid(scan.ranges_[i]))
@@ -78,7 +83,10 @@ double Particle::likelihood(LikelihoodFieldMap *map, Scan &scan, int &valid_beam
 
 		ans += map->likelihood(lx, ly);
 		++valid_beam_sum;
+		++test_cnt;
 	}
+
+	std::cout << test_cnt << ", ";
 	return ans;
 }
 
@@ -91,7 +99,15 @@ double Particle::likelihood(LikelihoodFieldMap *map, Scan &scan, int &valid_beam
 				+ scan.lidar_pose_y_*Mcl::cos_[t];
 	uint16_t lidar_yaw = Pose::get16bitRepresentation(scan.lidar_pose_yaw_);
 
+    std::chrono::system_clock::time_point start_2, end_2;
+    start_2 = std::chrono::high_resolution_clock::now();
+	// std::clock_t start = std::clock();
 	double ans = 0.0;
+	static int cnt = 0;
+	static double time_sum = 0;
+
+	// std::cout << scan.ranges_.size() << ", " << scan.scan_increment_ << "\n"; 
+
 	for(int i=0;i<scan.ranges_.size();i+=scan.scan_increment_){
 		if(not scan.valid(scan.ranges_[i]))
 			continue;
@@ -112,9 +128,23 @@ double Particle::likelihood(LikelihoodFieldMap *map, Scan &scan, int &valid_beam
 
 		ans += map->likelihood(lx, ly);
 		++valid_beam_sum;
-		scan_angle[i]++;
 	}
 
+	// std::clock_t end = std::clock();
+	end_2 = std::chrono::high_resolution_clock::now();
+	double time_2 = std::chrono::duration_cast<std::chrono::nanoseconds>(end_2 - start_2).count();
+	// double time_2 = static_cast<double>(end - start) / CLOCKS_PER_SEC;
+
+	time_sum += time_2;
+	cnt++;
+	// if (cnt >= 50000){
+	// 	time_sum/=1000000;
+	// 	std::ofstream ofs_csv_file("/tmp/time3_wall_0.csv", std::ios::app);
+	// 	ofs_csv_file << time_sum << ',';
+	// 	ofs_csv_file << std::endl;
+	// 	time_sum = 0;
+	// 	cnt = 0;
+	// }
 	return ans;
 }
 

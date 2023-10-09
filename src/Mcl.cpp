@@ -8,6 +8,7 @@
 #include <cmath>
 #include <random>
 #include <fstream>
+#include <chrono>
 
 namespace emcl2 {
 
@@ -47,6 +48,9 @@ Mcl::~Mcl()
 
 void Mcl::resampling(void)
 {
+	std::chrono::system_clock::time_point start_2, end_2;
+    start_2 = std::chrono::system_clock::now();
+	
 	std::vector<double> accum;
 	accum.push_back(particles_[0].w_);
 	for(int i=1;i<particles_.size();i++){
@@ -78,8 +82,8 @@ void Mcl::resampling(void)
 	}
 
 	constexpr int MIN = 1;
-	constexpr int MAX = 10000;
-	constexpr int RAND_NUMS_TO_GENERATE = 1000;
+	constexpr int MAX = 1000;
+	constexpr int RAND_NUMS_TO_GENERATE = 100;
 	
 	std::random_device rd;
 	std::mt19937 eng(rd());
@@ -97,6 +101,24 @@ void Mcl::resampling(void)
 			p.s_ = randomScanRange(p.s_);
 		}
 	}
+
+	end_2 = std::chrono::system_clock::now();
+	double time_2 = std::chrono::duration_cast<std::chrono::milliseconds>(end_2 - start_2).count();
+
+	static std::vector<double> data_2;
+	static int cnt_2 = 0;
+	cnt_2++ ;
+	if (time_2 > 0 && cnt_2 > 100){
+		data_2.push_back(time_2);
+		double ave_2 = 0.0, var_2 = 0.0;
+		for(const auto &x : data_2){
+			ave_2 += x;
+			var_2 += x * x;
+		}
+		ave_2 /= data_2.size();
+		var_2 = var_2 / data_2.size() - ave_2 * ave_2;
+		// std::cout << "リサンプリングのみ　平均：" << ave_2 << ", 標準偏差：" << std::sqrt(var_2) << std::endl;
+	}
 }
 
 void Mcl::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, bool inv)
@@ -104,6 +126,8 @@ void Mcl::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, bool inv)
 	if(processed_seq_ == scan_.seq_)
 		return;
 
+    std::chrono::system_clock::time_point start_2, end_2;
+    start_2 = std::chrono::system_clock::now();
 	Scan scan;
 	int seq = -1;
 	while(seq != scan_.seq_){//trying to copy the latest scan before next 
@@ -152,6 +176,24 @@ void Mcl::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, bool inv)
 		resetWeight();
 
 	processed_seq_ = scan_.seq_;
+
+	end_2 = std::chrono::system_clock::now();
+	double time_2 = std::chrono::duration_cast<std::chrono::milliseconds>(end_2 - start_2).count();
+
+	static std::vector<double> data_2;
+	static int cnt_2 = 0;
+	cnt_2++ ;
+	if (time_2 > 0 && cnt_2 > 100){
+		data_2.push_back(time_2);
+		double ave_2 = 0.0, var_2 = 0.0;
+		for(const auto &x : data_2){
+			ave_2 += x;
+			var_2 += x * x;
+		}
+		ave_2 /= data_2.size();
+		var_2 = var_2 / data_2.size() - ave_2 * ave_2;
+		// std::cout << "Mcl::sensorUpdate　平均：" << ave_2 << ", 標準偏差：" << std::sqrt(var_2) << std::endl;
+	}
 }
 
 void Mcl::motionUpdate(double x, double y, double t)
@@ -276,13 +318,67 @@ void Mcl::resetWeight(void)
 }
 
 void Mcl::initialize(double x, double y, double t)
-{
-	Pose new_pose(x, y, t);
-  Scan scan = scan_;
+{	
+	x = -44.4600372314;
+	y = 2.88848609924;
+	t = -1.57;
+
+	x = -43.0600372314;
+	y = 24.18848609924;
+	t = -1.57;
+	
+	Pose new_pose_1(x+0.5, y, t);
+	Pose new_pose_2(x-0.5, y, t);
+	Scan scan = scan_;
+	int cnt = 0;
+
 	for(auto &p : particles_){
-		p.p_ = new_pose;
-    p.s_ = randomScanRange(scan);
-  }
+		if(cnt < particles_.size()/2){
+			p.p_ = new_pose_1;
+			p.s_ = randomScanRange(scan);
+		}
+		cnt++;
+	}
+	cnt=0;
+	for(auto &p : particles_){
+		if(cnt >= particles_.size()/2 && cnt < particles_.size()){
+			p.p_ = new_pose_2;
+			p.s_ = randomScanRange(scan);
+		}
+		cnt++;
+	}
+
+	resetWeight();
+}
+
+void Mcl::initialize(double x, double y, double t, int cnt)
+{	
+	Scan scan = scan_;
+	int p_cnt = 0;
+
+	if (cnt == 1){
+		Pose new_pose_1(x+0.5, y, t);
+		for(auto &p : particles_){
+			if(p_cnt < particles_.size()/2){
+				p.p_ = new_pose_1;
+				p.s_ = randomScanRange(scan);
+			}
+			p_cnt++;
+		}
+	}
+
+	p_cnt=0;
+
+	if (cnt == 2){
+		Pose new_pose_2(x-0.5, y, t);
+		for(auto &p : particles_){
+			if(p_cnt >= particles_.size()/2 && p_cnt < particles_.size()){
+				p.p_ = new_pose_2;
+				p.s_ = randomScanRange(scan);
+			}
+			p_cnt++;
+		}
+	}
 
 	resetWeight();
 }
@@ -301,20 +397,74 @@ Scan Mcl::randomScanRange(Scan scan)
 
   // scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + dist_angle_size(engine);
 
+  scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 0;   //360
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 9;   //350
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 19;   //340
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 29;   //330
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 39;   //320
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 49;   //310
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 59;   //300
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 69;   //290
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 79;   //280
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 89;   //270
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 99;   //260
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 109;   //250
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 119;   //240
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 129;   //230
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 139;   //220
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 149;   //210
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 159;   //200
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 169;   //190
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 179;   //180
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 189;   //170
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 199;   //160
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 209;   //150
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 219;   //140
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 229;   //130
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 239;   //120
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 249;   //110
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 259;   //100
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 269;   //90
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 279;   //80
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 289;   //70
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 299;   //60
+
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 309;   //50
+
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 319;   //40
+
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 329;   //30
+
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 339;   //20
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 349;   //10
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 359;   //0
+
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 0;   //360
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 39;   //320
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 79;   //280
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 119;   //240
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 159;   //200
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 199;   //160
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 239;   //120
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 279;   //80
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 319;   //40
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 359;   //0
+
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 89;  //270
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 179; //180
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 269; //90
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 314; //45
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 339; //20
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 344; //15
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 349; //10
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 354; //5
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 356; //3
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 357; //2
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 358; //1
-  std::uniform_int_distribution<> ramdom_angle(0, 20);
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 359; //0
+//   std::uniform_int_distribution<> ramdom_angle(0, 20);
 
-  scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 338 + ramdom_angle(engine); //1~10
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 338 + ramdom_angle(engine); //1~10
 
 
   scan.scan_mask_angle_middle_ = false;
