@@ -173,7 +173,8 @@ void EMcl2Node::initialScanRandomAngle()
 void EMcl2Node::loop(void)
 {
 	if(init_request_){
-		pf_->initialize(init_x_, init_y_, init_t_, init_pose_cnt_);
+		// pf_->initialize(init_x_, init_y_, init_t_, init_pose_cnt_);
+		pf_->initialize(init_x_, init_y_, init_t_);
 		init_request_ = false;
 	}
 	else if(simple_reset_request_){
@@ -181,7 +182,7 @@ void EMcl2Node::loop(void)
 		simple_reset_request_ = false;
 	}
 
-	if (init_pose_cnt_ >= 2){
+	// if (init_pose_cnt_ >= 2){
 		double x, y, t;
 		if(not getOdomPose(x, y, t)){
 			ROS_INFO("can't get odometry info");
@@ -252,7 +253,7 @@ void EMcl2Node::loop(void)
 		alpha_msg.data = static_cast<float>(pf_->alpha_);
 		alpha_pub_.publish(alpha_msg);
 		// matplot();
-	}
+	// }
 }
 
 void EMcl2Node::publishPose(double x, double y, double t,

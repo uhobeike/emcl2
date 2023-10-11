@@ -319,34 +319,14 @@ void Mcl::resetWeight(void)
 
 void Mcl::initialize(double x, double y, double t)
 {	
-	x = -44.4600372314;
-	y = 2.88848609924;
-	t = -1.57;
-
-	x = -43.0600372314;
-	y = 24.18848609924;
-	t = -1.57;
-	
-	Pose new_pose_1(x+0.5, y, t);
-	Pose new_pose_2(x-0.5, y, t);
+	Pose new_pose(x, y, t);
 	Scan scan = scan_;
-	int cnt = 0;
+	for(auto &p : particles_){
+		p.p_ = new_pose;
+	p.s_ = randomScanRange(scan);
+	}
 
-	for(auto &p : particles_){
-		if(cnt < particles_.size()/2){
-			p.p_ = new_pose_1;
-			p.s_ = randomScanRange(scan);
-		}
-		cnt++;
-	}
-	cnt=0;
-	for(auto &p : particles_){
-		if(cnt >= particles_.size()/2 && cnt < particles_.size()){
-			p.p_ = new_pose_2;
-			p.s_ = randomScanRange(scan);
-		}
-		cnt++;
-	}
+	resetWeight();
 
 	resetWeight();
 }
@@ -428,27 +408,23 @@ Scan Mcl::randomScanRange(Scan scan)
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 279;   //80
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 289;   //70
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 299;   //60
-
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 309;   //50
-
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 319;   //40
-
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 329;   //30
-
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 339;   //20
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 349;   //10
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 359;   //0
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 350;   //10
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 360;   //0
 
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 0;   //360
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 39;   //320
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 79;   //280
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 119;   //240
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 159;   //200
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 199;   //160
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 239;   //120
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 279;   //80
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 319;   //40
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 359;   //0
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 40;   //320
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 80;   //280
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 120;   //240
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 160;   //200
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 200;   //160
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 240;   //120
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 280;   //80
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 320;   //40
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 360;   //0
 
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 89;  //270
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 179; //180

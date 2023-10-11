@@ -50,8 +50,11 @@ double LikelihoodFieldMap::likelihood(double x, double y)
 	int ix = (int)floor((x - origin_x_)/resolution_);
 	int iy = (int)floor((y - origin_y_)/resolution_);
 
-	if(ix < 0 or iy < 0 or ix >= width_ or iy >= height_)
-		return 0.0;
+	if(ix < 0 or iy < 0 or ix >= width_ or iy >= height_){
+		ix = 0;
+		iy = 0;
+	}
+
 
 	return likelihoods_[ix][iy];
 }

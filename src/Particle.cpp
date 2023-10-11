@@ -100,51 +100,60 @@ double Particle::likelihood(LikelihoodFieldMap *map, Scan &scan, int &valid_beam
 	uint16_t lidar_yaw = Pose::get16bitRepresentation(scan.lidar_pose_yaw_);
 
     std::chrono::system_clock::time_point start_2, end_2;
-    start_2 = std::chrono::high_resolution_clock::now();
 	// std::clock_t start = std::clock();
+    start_2 = std::chrono::high_resolution_clock::now();
+	
 	double ans = 0.0;
 	static int cnt = 0;
+	static int valid_cnt = 0;
 	static double time_sum = 0;
 
-	// std::cout << scan.ranges_.size() << ", " << scan.scan_increment_ << "\n"; 
+	if(scan.scan_mask_angle_middle_){		
+    	// start_2 = std::chrono::high_resolution_clock::now();
+		for(int i=scan.scan_mask_angle_end_;i<scan.scan_mask_angle_begin_;i+=scan.scan_increment_){			
+			uint16_t a = scan.directions_16bit_[i] + t + lidar_yaw;
+			double lx = lidar_x + scan.ranges_[i] * Mcl::cos_[a];
+			double ly = lidar_y + scan.ranges_[i] * Mcl::sin_[a];
 
-	for(int i=0;i<scan.ranges_.size();i+=scan.scan_increment_){
-		if(not scan.valid(scan.ranges_[i]))
-			continue;
-		if(scan.scan_mask_angle_middle_)
-			if ((scan.scan_mask_angle_begin_ <= i && i <= scan.ranges_.size()) 
-					|| (0 <= i && i <= scan.scan_mask_angle_end_)){
-				continue;
-			}
-		if(not scan.scan_mask_angle_middle_){
-			if ((scan.scan_mask_angle_begin_ <= i) && (i <= scan.scan_mask_angle_end_)){
-				continue;
-			}
+			ans += map->likelihood(lx, ly);
+			++valid_beam_sum;
 		}
-		
-		uint16_t a = scan.directions_16bit_[i] + t + lidar_yaw;
-		double lx = lidar_x + scan.ranges_[i] * Mcl::cos_[a];
-		double ly = lidar_y + scan.ranges_[i] * Mcl::sin_[a];
+		// valid_cnt++;
+		// end_2 = std::chrono::high_resolution_clock::now();
+	}
+	else {
+    	// start_2 = std::chrono::high_resolution_clock::now();
+		for(int i=0;i<scan.ranges_.size();i+=scan.scan_increment_){
+			if(i==scan.scan_mask_angle_begin_){
+				i=scan.scan_mask_angle_end_;
+			}
+			uint16_t a = scan.directions_16bit_[i] + t + lidar_yaw;
+			double lx = lidar_x + scan.ranges_[i] * Mcl::cos_[a];
+			double ly = lidar_y + scan.ranges_[i] * Mcl::sin_[a];
 
-		ans += map->likelihood(lx, ly);
-		++valid_beam_sum;
+			ans += map->likelihood(lx, ly);
+			++valid_beam_sum;
+		}
+		// valid_cnt++;
+		// end_2 = std::chrono::high_resolution_clock::now();
 	}
 
-	// std::clock_t end = std::clock();
 	end_2 = std::chrono::high_resolution_clock::now();
+	// std::cout << valid_cnt << "\n";
 	double time_2 = std::chrono::duration_cast<std::chrono::nanoseconds>(end_2 - start_2).count();
+	// std::clock_t end = std::clock();
 	// double time_2 = static_cast<double>(end - start) / CLOCKS_PER_SEC;
 
 	time_sum += time_2;
 	cnt++;
-	// if (cnt >= 50000){
-	// 	time_sum/=1000000;
-	// 	std::ofstream ofs_csv_file("/tmp/time3_wall_0.csv", std::ios::app);
-	// 	ofs_csv_file << time_sum << ',';
-	// 	ofs_csv_file << std::endl;
-	// 	time_sum = 0;
-	// 	cnt = 0;
-	// }
+	if (cnt >= 1000){
+		time_sum/=1000000;
+		std::ofstream ofs_csv_file("/tmp/time_likelihood_fix_360_1000.csv", std::ios::app);
+		ofs_csv_file << time_sum << ',';
+		ofs_csv_file << std::endl;
+		time_sum = 0;
+		cnt = 0;
+	}
 	return ans;
 }
 
