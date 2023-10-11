@@ -99,56 +99,78 @@ double Particle::likelihood(LikelihoodFieldMap *map, Scan &scan, int &valid_beam
 				+ scan.lidar_pose_y_*Mcl::cos_[t];
 	uint16_t lidar_yaw = Pose::get16bitRepresentation(scan.lidar_pose_yaw_);
 
-    std::chrono::system_clock::time_point start_2, end_2;
+    std::chrono::system_clock::time_point start, end;
 	// std::clock_t start = std::clock();
-    start_2 = std::chrono::high_resolution_clock::now();
+    start = std::chrono::high_resolution_clock::now();
 	
 	double ans = 0.0;
 	static int cnt = 0;
-	static int valid_cnt = 0;
+	int exec_cnt = 0;
 	static double time_sum = 0;
+	int scan_hani = 360;
 
-	if(scan.scan_mask_angle_middle_){		
-    	// start_2 = std::chrono::high_resolution_clock::now();
-		for(int i=scan.scan_mask_angle_end_;i<scan.scan_mask_angle_begin_;i+=scan.scan_increment_){			
-			uint16_t a = scan.directions_16bit_[i] + t + lidar_yaw;
-			double lx = lidar_x + scan.ranges_[i] * Mcl::cos_[a];
-			double ly = lidar_y + scan.ranges_[i] * Mcl::sin_[a];
-
-			ans += map->likelihood(lx, ly);
-			++valid_beam_sum;
-		}
-		// valid_cnt++;
-		// end_2 = std::chrono::high_resolution_clock::now();
-	}
-	else {
-    	// start_2 = std::chrono::high_resolution_clock::now();
-		for(int i=0;i<scan.ranges_.size();i+=scan.scan_increment_){
-			if(i==scan.scan_mask_angle_begin_){
-				i=scan.scan_mask_angle_end_;
-			}
-			uint16_t a = scan.directions_16bit_[i] + t + lidar_yaw;
-			double lx = lidar_x + scan.ranges_[i] * Mcl::cos_[a];
-			double ly = lidar_y + scan.ranges_[i] * Mcl::sin_[a];
-
-			ans += map->likelihood(lx, ly);
-			++valid_beam_sum;
-		}
-		// valid_cnt++;
-		// end_2 = std::chrono::high_resolution_clock::now();
+	for(int i=0;i<scan_hani;i+=1){	
+		ans += map->likelihood(0, 0);
+		++exec_cnt;
 	}
 
-	end_2 = std::chrono::high_resolution_clock::now();
-	// std::cout << valid_cnt << "\n";
-	double time_2 = std::chrono::duration_cast<std::chrono::nanoseconds>(end_2 - start_2).count();
+	// if(scan.scan_mask_angle_middle_){		
+    // 	// start = std::chrono::high_resolution_clock::now();
+
+	// 	for(int i=scan.scan_mask_angle_end_;i<scan.scan_mask_angle_begin_;i+=scan.scan_increment_){			
+	// 		// uint16_t a = scan.directions_16bit_[i] + t + lidar_yaw;
+	// 		// double lx = lidar_x + scan.ranges_[i] * Mcl::cos_[a];
+	// 		// double ly = lidar_y + scan.ranges_[i] * Mcl::sin_[a];
+
+	// 		// ans += map->likelihood(lx, ly);
+	// 		++valid_beam_sum;
+	// 		exec_cnt++;
+	// 	}
+	// 	// end = std::chrono::high_resolution_clock::now();
+	// }
+	// else {
+
+    // 	// start = std::chrono::high_resolution_clock::now();
+	// 	for(int i=0;i<scan.scan_mask_angle_begin_;i+=scan.scan_increment_){
+	// 		// uint16_t a = scan.directions_16bit_[i] + t + lidar_yaw;
+	// 		// double lx = lidar_x + scan.ranges_[i] * Mcl::cos_[a];
+	// 		// double ly = lidar_y + scan.ranges_[i] * Mcl::sin_[a];
+
+	// 		// ans += map->likelihood(lx, ly);
+	// 		++valid_beam_sum;
+	// 		exec_cnt++;
+	// 	}
+	// 	for(int i=scan.scan_mask_angle_end_;i<360;i+=scan.scan_increment_){
+	// 		// uint16_t a = scan.directions_16bit_[i] + t + lidar_yaw;
+	// 		// double lx = lidar_x + scan.ranges_[i] * Mcl::cos_[a];
+	// 		// double ly = lidar_y + scan.ranges_[i] * Mcl::sin_[a];
+
+	// 		// ans += map->likelihood(lx, ly);
+	// 		++valid_beam_sum;
+	// 		exec_cnt++;
+	// 	}
+	// 	// end = std::chrono::high_resolution_clock::now();
+	// }
+
+	end = std::chrono::high_resolution_clock::now();
+	// std::cout << exec_cnt << "\n";
+	double time = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 	// std::clock_t end = std::clock();
 	// double time_2 = static_cast<double>(end - start) / CLOCKS_PER_SEC;
 
-	time_sum += time_2;
+	if (exec_cnt != scan_hani){
+		std::cout << "debug exec_cnt: " << exec_cnt << ", " 
+										<< scan.scan_mask_angle_middle_ << ", "
+										<< scan.scan_mask_angle_begin_ << ", "
+										<< scan.scan_mask_angle_end_ << "\n";
+		exit(1);
+	}
+
+	time_sum += time;
 	cnt++;
-	if (cnt >= 1000){
+	if (cnt >= 50000){
 		time_sum/=1000000;
-		std::ofstream ofs_csv_file("/tmp/time_likelihood_fix_360_1000.csv", std::ios::app);
+		std::ofstream ofs_csv_file("/tmp/time_50000_360_1.csv", std::ios::app);
 		ofs_csv_file << time_sum << ',';
 		ofs_csv_file << std::endl;
 		time_sum = 0;
