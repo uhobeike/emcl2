@@ -98,66 +98,29 @@ double Particle::likelihood(LikelihoodFieldMap *map, Scan &scan, int &valid_beam
 	double lidar_y = p_.y_ + scan.lidar_pose_x_*Mcl::sin_[t] 
 				+ scan.lidar_pose_y_*Mcl::cos_[t];
 	uint16_t lidar_yaw = Pose::get16bitRepresentation(scan.lidar_pose_yaw_);
-
-    std::chrono::system_clock::time_point start, end;
-	// std::clock_t start = std::clock();
-    start = std::chrono::high_resolution_clock::now();
 	
 	double ans = 0.0;
-	static int cnt = 0;
-	int exec_cnt = 0;
-	static double time_sum = 0;
-	int scan_hani = 360;
+	static int p_cnt = 0; //パーテイクル分、実行されているかのカウントアップ
+	int exec_cnt = 0; //実際にforが観測範囲分、実行されているかのカウントアップ
+	static double time_sum = 0; //全パーテイクルでの処理時間
+	int scan_hani = 10; //観測範囲
+
+    std::chrono::system_clock::time_point start, end;
+
+	//計測開始
+    start = std::chrono::high_resolution_clock::now();
 
 	for(int i=0;i<scan_hani;i+=1){	
-		ans += map->likelihood(0, 0);
-		++exec_cnt;
+		ans += map->likelihood(0, 0); //適当に0を固定で入れておく
+		++exec_cnt;//実行のカウントアップ
 	}
 
-	// if(scan.scan_mask_angle_middle_){		
-    // 	// start = std::chrono::high_resolution_clock::now();
-
-	// 	for(int i=scan.scan_mask_angle_end_;i<scan.scan_mask_angle_begin_;i+=scan.scan_increment_){			
-	// 		// uint16_t a = scan.directions_16bit_[i] + t + lidar_yaw;
-	// 		// double lx = lidar_x + scan.ranges_[i] * Mcl::cos_[a];
-	// 		// double ly = lidar_y + scan.ranges_[i] * Mcl::sin_[a];
-
-	// 		// ans += map->likelihood(lx, ly);
-	// 		++valid_beam_sum;
-	// 		exec_cnt++;
-	// 	}
-	// 	// end = std::chrono::high_resolution_clock::now();
-	// }
-	// else {
-
-    // 	// start = std::chrono::high_resolution_clock::now();
-	// 	for(int i=0;i<scan.scan_mask_angle_begin_;i+=scan.scan_increment_){
-	// 		// uint16_t a = scan.directions_16bit_[i] + t + lidar_yaw;
-	// 		// double lx = lidar_x + scan.ranges_[i] * Mcl::cos_[a];
-	// 		// double ly = lidar_y + scan.ranges_[i] * Mcl::sin_[a];
-
-	// 		// ans += map->likelihood(lx, ly);
-	// 		++valid_beam_sum;
-	// 		exec_cnt++;
-	// 	}
-	// 	for(int i=scan.scan_mask_angle_end_;i<360;i+=scan.scan_increment_){
-	// 		// uint16_t a = scan.directions_16bit_[i] + t + lidar_yaw;
-	// 		// double lx = lidar_x + scan.ranges_[i] * Mcl::cos_[a];
-	// 		// double ly = lidar_y + scan.ranges_[i] * Mcl::sin_[a];
-
-	// 		// ans += map->likelihood(lx, ly);
-	// 		++valid_beam_sum;
-	// 		exec_cnt++;
-	// 	}
-	// 	// end = std::chrono::high_resolution_clock::now();
-	// }
-
 	end = std::chrono::high_resolution_clock::now();
-	// std::cout << exec_cnt << "\n";
-	double time = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
-	// std::clock_t end = std::clock();
-	// double time_2 = static_cast<double>(end - start) / CLOCKS_PER_SEC;
+	//計測終了
 
+	double time = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+
+	//実行回数と観測範囲があっているか、合っていなかったら異常終了
 	if (exec_cnt != scan_hani){
 		std::cout << "debug exec_cnt: " << exec_cnt << ", " 
 										<< scan.scan_mask_angle_middle_ << ", "
@@ -166,15 +129,16 @@ double Particle::likelihood(LikelihoodFieldMap *map, Scan &scan, int &valid_beam
 		exit(1);
 	}
 
+	//全てのパーテイクル分処理が終わった時にcsvに処理時間を書き込む
 	time_sum += time;
-	cnt++;
-	if (cnt >= 50000){
+	p_cnt++;
+	if (p_cnt >= 50000){
 		time_sum/=1000000;
-		std::ofstream ofs_csv_file("/tmp/time_50000_360_1.csv", std::ios::app);
+		std::ofstream ofs_csv_file("/tmp/time_50000_10_1.csv", std::ios::app);
 		ofs_csv_file << time_sum << ',';
 		ofs_csv_file << std::endl;
 		time_sum = 0;
-		cnt = 0;
+		p_cnt = 0;
 	}
 	return ans;
 }
