@@ -82,7 +82,7 @@ void ExpResetMcl2::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, 
     start_2 = std::chrono::high_resolution_clock::now();
 	// std::clock_t start = std::clock();
 	
-	if (particles_.size() != 50000){
+	if (particles_.size() != 3340){
 		std::cout << "Not particle num" << "\n"; 
 		exit(1);
 	}

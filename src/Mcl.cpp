@@ -82,8 +82,8 @@ void Mcl::resampling(void)
 	}
 
 	constexpr int MIN = 1;
-	constexpr int MAX = 50000;
-	constexpr int RAND_NUMS_TO_GENERATE = 5000;
+	constexpr int MAX = 3340;
+	constexpr int RAND_NUMS_TO_GENERATE = 334;
 	
 	std::random_device rd;
 	std::mt19937 eng(rd());
@@ -104,21 +104,6 @@ void Mcl::resampling(void)
 
 	end_2 = std::chrono::system_clock::now();
 	double time_2 = std::chrono::duration_cast<std::chrono::milliseconds>(end_2 - start_2).count();
-
-	static std::vector<double> data_2;
-	static int cnt_2 = 0;
-	cnt_2++ ;
-	if (time_2 > 0 && cnt_2 > 100){
-		data_2.push_back(time_2);
-		double ave_2 = 0.0, var_2 = 0.0;
-		for(const auto &x : data_2){
-			ave_2 += x;
-			var_2 += x * x;
-		}
-		ave_2 /= data_2.size();
-		var_2 = var_2 / data_2.size() - ave_2 * ave_2;
-		// std::cout << "リサンプリングのみ　平均：" << ave_2 << ", 標準偏差：" << std::sqrt(var_2) << std::endl;
-	}
 }
 
 void Mcl::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, bool inv)
@@ -209,6 +194,11 @@ void Mcl::motionUpdate(double x, double y, double t)
 	if(d.nearlyZero())
 		return;
 
+	int scan_hani = 360;
+
+    std::chrono::system_clock::time_point start, end;
+    start = std::chrono::high_resolution_clock::now();
+
 	double fw_length = sqrt(d.x_*d.x_ + d.y_*d.y_);
 	double fw_direction = atan2(d.y_, d.x_) - prev_odom_->t_;
 
@@ -219,6 +209,15 @@ void Mcl::motionUpdate(double x, double y, double t)
 			odom_model_->drawFwNoise(), odom_model_->drawRotNoise());
 
 	prev_odom_->set(*last_odom_);
+
+	end = std::chrono::high_resolution_clock::now();
+	double time = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+
+	time/=1000000;
+	std::string str = "/tmp/time_idou_" + std::to_string(scan_hani) + ".csv";
+	std::ofstream ofs_csv_file(str, std::ios::app);
+	ofs_csv_file << time << ',';
+	ofs_csv_file << std::endl;
 }
 
 void Mcl::meanPose(double &x_mean, double &y_mean, double &t_mean,
@@ -378,41 +377,42 @@ Scan Mcl::randomScanRange(Scan scan)
   // scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + dist_angle_size(engine);
 
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 0;   //360
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 9;   //350
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 19;   //340
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 29;   //330
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 39;   //320
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 49;   //310
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 59;   //300
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 69;   //290
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 79;   //280
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 89;   //270
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 99;   //260
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 109;   //250
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 119;   //240
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 129;   //230
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 139;   //220
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 149;   //210
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 159;   //200
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 169;   //190
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 179;   //180
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 189;   //170
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 199;   //160
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 209;   //150
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 219;   //140
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 229;   //130
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 239;   //120
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 249;   //110
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 259;   //100
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 269;   //90
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 279;   //80
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 289;   //70
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 299;   //60
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 309;   //50
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 319;   //40
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 329;   //30
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 339;   //20
-  scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 350;   //10
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 10;   //350
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 20;   //340
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 30;   //330
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 40;   //320
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 50;   //310
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 60;   //300
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 70;   //290
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 80;   //280
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 90;   //270
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 100;   //260
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 110;   //250
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 120;   //240
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 130;   //230
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 140;   //220
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 150;   //210
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 160;   //200
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 170;   //190
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 180;   //180
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 190;   //170
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 200;   //160
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 210;   //150
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 220;   //140
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 230;   //130
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 240;   //120
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 250;   //110
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 260;   //100
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 270;   //90
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 280;   //80
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 290;   //70
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 300;   //60
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 310;   //50
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 320;   //40
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 330;   //30
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 340;   //20
+  scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 345; //15
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 350;   //10
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 360;   //0
 
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 0;   //360
