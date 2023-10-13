@@ -65,9 +65,13 @@ void EMcl2Node::initPF(void)
 	private_nh_.param("scan_increment", scan.scan_increment_, 1);
 
 	Pose init_pose;
-	private_nh_.param("initial_pose_x", init_pose.x_, 0.0);
-	private_nh_.param("initial_pose_y", init_pose.y_, 0.0);
-	private_nh_.param("initial_pose_a", init_pose.t_, 0.0);
+	private_nh_.param("initial_pose_x", init_pose.x_, -43.8564682007);
+	private_nh_.param("initial_pose_y", init_pose.y_, 11.7848844528);
+	private_nh_.param("initial_pose_a", init_pose.t_, -1.57);
+
+	// init_pose.x_ = -43.85646;
+	// init_pose.y_ = 11.784884;
+	// init_pose.t_ = -1.57;
 
 	int num_particles;
 	double alpha_th;
@@ -174,7 +178,8 @@ void EMcl2Node::loop(void)
 {
 	if(init_request_){
 		// pf_->initialize(init_x_, init_y_, init_t_, init_pose_cnt_);
-		pf_->initialize(init_x_, init_y_, init_t_);
+		// pf_->initialize(init_x_, init_y_, init_t_);
+		pf_->initialize(-43.8626899719, 9.43587398529, -1.57);
 		init_request_ = false;
 	}
 	else if(simple_reset_request_){

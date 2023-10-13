@@ -83,7 +83,7 @@ void Mcl::resampling(void)
 
 	constexpr int MIN = 1;
 	constexpr int MAX = 3340;
-	constexpr int RAND_NUMS_TO_GENERATE = 334;
+	constexpr int RAND_NUMS_TO_GENERATE = 100;
 	
 	std::random_device rd;
 	std::mt19937 eng(rd());
@@ -413,6 +413,7 @@ Scan Mcl::randomScanRange(Scan scan)
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 340;   //20
   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 345; //15
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 350;   //10
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 355;   //5
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 360;   //0
 
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 0;   //360
