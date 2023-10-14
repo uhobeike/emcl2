@@ -176,7 +176,9 @@ void EMcl2Node::initialScanRandomAngle()
 
 void EMcl2Node::loop(void)
 {
-	if(init_request_){
+	static int cnt = 0;
+	cnt++;
+	if(init_request_ || cnt == 10){
 		// pf_->initialize(init_x_, init_y_, init_t_, init_pose_cnt_);
 		// pf_->initialize(init_x_, init_y_, init_t_);
 		pf_->initialize(-43.8626899719, 9.43587398529, -1.57);

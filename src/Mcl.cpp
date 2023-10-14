@@ -408,12 +408,13 @@ Scan Mcl::randomScanRange(Scan scan)
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 290;   //70
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 300;   //60
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 310;   //50
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 320;   //40
+  scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 320;   //40
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 330;   //30
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 340;   //20
-  scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 345; //15
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 345; //15
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 350;   //10
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 355;   //5
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 359;   //1
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 360;   //0
 
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 0;   //360

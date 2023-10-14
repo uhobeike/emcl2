@@ -107,7 +107,7 @@ double Particle::likelihood(LikelihoodFieldMap *map, Scan &scan, int &valid_beam
 	int exec_cnt = 0;
 	static double time_sum = 0;
 
-	int scan_hani = 30;
+	int scan_hani = 80;
 	int scan_begin =  scan.scan_mask_angle_begin_ * 2;
 	int scan_end =  scan.scan_mask_angle_end_ * 2;
 
