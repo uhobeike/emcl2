@@ -39,10 +39,12 @@ void EMcl2Node::initCommunication(void)
 	pose_pub_ = nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("mcl_pose", 2, true);
 	alpha_pub_ = nh_.advertise<std_msgs::Float32>("alpha", 2, true);
 	scan_pub_ = nh_.advertise<sensor_msgs::LaserScan>("most_observation", 2, true);
+	map_pub_ = nh_.advertise<nav_msgs::OccupancyGrid>("observations_used", 2, true);
 	laser_scan_sub_ = nh_.subscribe("scan", 2, &EMcl2Node::cbScan, this);
 	initial_pose_sub_ = nh_.subscribe("initialpose", 2, &EMcl2Node::initialPoseReceived, this);
 
 	global_loc_srv_ = nh_.advertiseService("global_localization", &EMcl2Node::cbSimpleReset, this);
+	pub_map_srv_ = nh_.advertiseService("pub_map", &EMcl2Node::cbPubMap, this);
 
 	private_nh_.param("global_frame_id", global_frame_id_, std::string("map"));
 	private_nh_.param("footprint_frame_id", footprint_frame_id_, std::string("base_footprint"));
@@ -147,6 +149,7 @@ std::shared_ptr<LikelihoodFieldMap> EMcl2Node::initMap(void)
 		ros::Duration d(0.5);
 		d.sleep();
 	}
+	map_ = resp.map;
 
 	return std::shared_ptr<LikelihoodFieldMap>(new LikelihoodFieldMap(resp.map, likelihood_range));
 }
@@ -181,7 +184,9 @@ void EMcl2Node::loop(void)
 	if(init_request_ || cnt == 10){
 		// pf_->initialize(init_x_, init_y_, init_t_, init_pose_cnt_);
 		// pf_->initialize(init_x_, init_y_, init_t_);
-		pf_->initialize(-43.8626899719, 9.43587398529, -1.57);
+		// pf_->initialize(-43.8626899719, 9.43587398529, -1.57);
+		// pf_->initialize(25.6981374749, 16.0470955661, -1.57);
+		pf_->initialize(25.9981374749, 17.2470955661, -1.57);
 		init_request_ = false;
 	}
 	else if(simple_reset_request_){
@@ -407,6 +412,15 @@ int EMcl2Node::getOdomFreq(void){
 bool EMcl2Node::cbSimpleReset(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
 {
 	return simple_reset_request_ = true;
+}
+
+bool EMcl2Node::cbPubMap(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
+{
+	auto map = pf_->getObservationsUsed();	
+	
+	std::copy(map.begin(), map.end(), map_.data.begin());
+	map_pub_.publish(map_);
+	return true;
 }
 
 }

@@ -82,7 +82,7 @@ void Mcl::resampling(void)
 	}
 
 	constexpr int MIN = 1;
-	constexpr int MAX = 3340;
+	constexpr int MAX = 1000;
 	constexpr int RAND_NUMS_TO_GENERATE = 100;
 	
 	std::random_device rd;
@@ -385,7 +385,7 @@ Scan Mcl::randomScanRange(Scan scan)
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 60;   //300
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 70;   //290
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 80;   //280
-//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 90;   //270
+  scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 90;   //270
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 100;   //260
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 110;   //250
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 120;   //240
@@ -408,7 +408,8 @@ Scan Mcl::randomScanRange(Scan scan)
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 290;   //70
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 300;   //60
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 310;   //50
-  scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 320;   //40
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 315;   //45
+//   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 320;   //40
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 330;   //30
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 340;   //20
 //   scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 345; //15
@@ -465,4 +466,7 @@ void Mcl::simpleReset(void)
 	}
 }
 
+std::vector<double> Mcl::getObservationsUsed(){
+	return map_->getObservationsUsed();
+}
 }

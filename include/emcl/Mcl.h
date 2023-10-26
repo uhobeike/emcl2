@@ -43,6 +43,8 @@ public:
 
 	void simpleReset(void);
 
+	std::vector<double> getObservationsUsed(void);
+
   	Scan randomScanRange(Scan scan);
 
 	static double cos_[(1<<16)];

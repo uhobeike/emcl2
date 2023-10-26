@@ -39,10 +39,12 @@ private:
 	ros::Publisher pose_pub_;
 	ros::Publisher alpha_pub_;
 	ros::Publisher scan_pub_;
+	ros::Publisher map_pub_;
 	ros::Subscriber laser_scan_sub_;
 	ros::Subscriber initial_pose_sub_;
 
 	ros::ServiceServer global_loc_srv_;
+	ros::ServiceServer pub_map_srv_;
 
 	std::string footprint_frame_id_;
 	std::string global_frame_id_;
@@ -57,6 +59,7 @@ private:
 	tf2::Transform latest_tf_;
 
 	sensor_msgs::LaserScan scan_;
+	nav_msgs::OccupancyGrid map_;
 
 	int odom_freq_;
 	bool init_request_;
@@ -80,6 +83,7 @@ private:
 
 	void cbScan(const sensor_msgs::LaserScan::ConstPtr &msg);
 	bool cbSimpleReset(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
+	bool cbPubMap(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
 	void initialPoseReceived(const geometry_msgs::PoseWithCovarianceStampedConstPtr& msg);
 };
 

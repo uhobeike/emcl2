@@ -36,6 +36,9 @@ LikelihoodFieldMap::LikelihoodFieldMap(const nav_msgs::OccupancyGrid &map, doubl
 		}
 
 	normalize();
+
+	visualization_observations_used_.resize(map.data.size());
+	std::copy(map.data.begin(), map.data.end(), visualization_observations_used_.begin());
 }
 
 LikelihoodFieldMap::~LikelihoodFieldMap()
@@ -44,6 +47,9 @@ LikelihoodFieldMap::~LikelihoodFieldMap()
 		delete [] e;
 }
 
+std::vector<double> LikelihoodFieldMap::getObservationsUsed(){
+	return visualization_observations_used_;
+}
 
 double LikelihoodFieldMap::likelihood(double x, double y)
 {
@@ -55,6 +61,7 @@ double LikelihoodFieldMap::likelihood(double x, double y)
 		iy = 0;
 	}
 
+	visualization_observations_used_[y * width_ + x] = 0;
 
 	return likelihoods_[ix][iy];
 }
@@ -71,6 +78,7 @@ void LikelihoodFieldMap::setLikelihood(int x, int y, double range)
 			if(i+x >= 0 and i+y >= 0 and i+x < width_ and i+y < height_)
 				likelihoods_[i+x][j+y] = std::max(likelihoods_[i+x][j+y], 
 			                         std::min(weights[abs(i)], weights[abs(j)]));
+
 }
 
 void LikelihoodFieldMap::normalize(void)

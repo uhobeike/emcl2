@@ -21,7 +21,10 @@ public:
 	void setLikelihood(int x, int y, double range);
 	double likelihood(double x, double y);
 
+	std::vector<double> getObservationsUsed();
+
 	std::vector<double *> likelihoods_;
+	std::vector<double> visualization_observations_used_;
 	int width_;
 	int height_;
 
