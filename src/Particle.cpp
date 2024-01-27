@@ -99,9 +99,6 @@ double Particle::likelihood(LikelihoodFieldMap *map, Scan &scan, int &valid_beam
 				+ scan.lidar_pose_y_*Mcl::cos_[t];
 	uint16_t lidar_yaw = Pose::get16bitRepresentation(scan.lidar_pose_yaw_);
 
-    std::chrono::system_clock::time_point start, end;
-    start = std::chrono::high_resolution_clock::now();
-	
 	double ans = 0.0;
 	static int p_cnt = 0;
 	int exec_cnt = 0;
@@ -144,9 +141,6 @@ double Particle::likelihood(LikelihoodFieldMap *map, Scan &scan, int &valid_beam
 		}
 	}
 
-	end = std::chrono::high_resolution_clock::now();
-	double time = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
-
 	if (exec_cnt != scan_hani){
 		std::cout << "debug exec_cnt: " << exec_cnt << ", " 
 										<< scan.scan_mask_angle_middle_ << ", "
@@ -155,17 +149,6 @@ double Particle::likelihood(LikelihoodFieldMap *map, Scan &scan, int &valid_beam
 		exit(1);
 	}
 
-	// time_sum += time;
-	// p_cnt++;
-	// if (p_cnt >= 50000){
-	// 	time_sum/=1000000;
-	// 	std::string str = "/tmp/time_" + std::to_string(scan_hani) + ".csv";
-	// 	std::ofstream ofs_csv_file(str, std::ios::app);
-	// 	ofs_csv_file << time_sum << ',';
-	// 	ofs_csv_file << std::endl;
-	// 	time_sum = 0;
-	// 	p_cnt = 0;
-	// }
 	return ans;
 }
 

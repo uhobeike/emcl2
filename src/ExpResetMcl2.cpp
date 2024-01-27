@@ -69,19 +69,10 @@ void ExpResetMcl2::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, 
 
 	beam_matching_score_sum_ = 0;
 	valid_beam_sum_= 0;
-	std::vector<std::vector<int>> particle_scan_angles;
-	particle_scan_angles.clear();
 
 	int cnt = 0; 
-	std::vector<int> scan_angle(360,1);
-	partial_sum(scan_angle.begin(), scan_angle.end(), scan_angle.begin());
 	std::vector<int> scan_angle_cnt(360,0);
-	std::vector<uint8_t> multiple_observation;
 
-    std::chrono::system_clock::time_point start_2, end_2;
-    start_2 = std::chrono::high_resolution_clock::now();
-	// std::clock_t start = std::clock();
-	
 	if (particles_.size() != 1000){
 		std::cout << "Not particle num" << "\n"; 
 		exit(1);
@@ -96,33 +87,6 @@ void ExpResetMcl2::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, 
 		beam_matching_score_sum_ += beam_matching_score;
 	}
 
-	// std::clock_t end = std::clock();
-	end_2 = std::chrono::high_resolution_clock::now();
-	double time_2 = std::chrono::duration_cast<std::chrono::milliseconds>(end_2 - start_2).count();
-	// double time_2 = static_cast<double>(end - start) / CLOCKS_PER_SEC;
-
-	static std::vector<double> data_2;
-	static int cnt_2 = 0;
-	cnt_2++ ;
-	if (time_2 > 0 && cnt_2 > 100){
-		data_2.push_back(time_2);
-		double ave_2 = 0.0, var_2 = 0.0;
-		for(const auto &x : data_2){
-			ave_2 += x;
-			var_2 += x * x;
-		}
-		ave_2 /= data_2.size();
-		var_2 = var_2 / data_2.size() - ave_2 * ave_2;
-		// std::cout << "重みの計算のみ　平均：" << ave_2 << ", 標準偏差：" << std::sqrt(var_2) << std::endl;
-	}
-
-	std::vector<int>::iterator iter = std::max_element(scan_angle_cnt.begin(), scan_angle_cnt.end());
-	size_t index = std::distance(scan_angle_cnt.begin(), iter);
-	most_observations.push_back(double(index));
-	
-    std::chrono::system_clock::time_point start_3, end_3;
-    start_3 = std::chrono::system_clock::now();
-
 	normalizeBelief();
 	alpha_ = beam_matching_score_sum_/valid_beam_sum_;
 
@@ -130,26 +94,7 @@ void ExpResetMcl2::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, 
 		resampling();
 	else
 		resetWeight();
-
 	
-	end_3 = std::chrono::system_clock::now();
-	double time_3 = std::chrono::duration_cast<std::chrono::milliseconds>(end_3 - start_3).count();
-
-	static std::vector<double> data_3;
-	static int cnt_3 = 0;
-	cnt_3++ ;
-	if (time_3 > 0 && cnt_3 > 100){
-		data_3.push_back(time_3);
-		double ave_3 = 0.0, var_3 = 0.0;
-		for(const auto &x : data_3){
-			ave_3 += x;
-			var_3 += x * x;
-		}
-		ave_3 /= data_3.size();
-		var_3 = var_3 / data_3.size() - ave_3 * ave_3;
-		// std::cout << "重みの正規化＋リサンプリング＋重みのリセット　平均：" << ave_3 << ", 標準偏差：" << std::sqrt(var_3) << std::endl;
-	}
-
 	processed_seq_ = scan_.seq_;
 
 

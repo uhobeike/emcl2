@@ -179,8 +179,6 @@ void EMcl2Node::loop(void)
 	static int cnt = 0;
 	cnt++;
 	if(init_request_ || cnt == 100){
-		// pf_->initialize(init_x_, init_y_, init_t_, init_pose_cnt_);
-		// pf_->initialize(init_x_, init_y_, init_t_);
 		pf_->initialize(25.9981374749, 17.2470955661, -1.57);
 		init_request_ = false;
 	}
@@ -189,78 +187,36 @@ void EMcl2Node::loop(void)
 		simple_reset_request_ = false;
 	}
 
-	// if (init_pose_cnt_ >= 2){
-		double x, y, t;
-		if(not getOdomPose(x, y, t)){
-			ROS_INFO("can't get odometry info");
-			return;
-		}
-		std::chrono::system_clock::time_point start_1, end_1;
-		start_1 = std::chrono::system_clock::now();
-		std::vector<double> most_observations_1;
-		pf_->motionUpdate(x, y, t);
-		end_1 = std::chrono::system_clock::now();
-		double time_1 = std::chrono::duration_cast<std::chrono::nanoseconds>(end_1 - start_1).count();
-		time_1 = time_1/ 1000000;
+	double x, y, t;
+	if(not getOdomPose(x, y, t)){
+		ROS_INFO("can't get odometry info");
+		return;
+	}
+	pf_->motionUpdate(x, y, t);
 
-		static std::vector<double> data_1;
-		static int cnt_1 = 0;
-		cnt_1++ ;
-		if (time_1 > 0 && cnt_1 > 100){
-			data_1.push_back(time_1);
-			double ave_1 = 0.0, var_1 = 0.0;
-			for(const auto &x : data_1){
-				ave_1 += x;
-				var_1 += x * x;
-			}
-			ave_1 /= data_1.size();
-			var_1 = var_1 / data_1.size() - ave_1 * ave_1;
-			// std::cout << "移動更新　平均：" << ave_1 << ", 標準偏差：" << std::sqrt(var_1) << std::endl;
-		}
+	double lx, ly, lt;
+	bool inv;
+	if(not getLidarPose(lx, ly, lt, inv)){
+		ROS_INFO("can't get lidar pose info");
+		return;
+	}
 
-		double lx, ly, lt;
-		bool inv;
-		if(not getLidarPose(lx, ly, lt, inv)){
-			ROS_INFO("can't get lidar pose info");
-			return;
-		}
+	std::vector<double> most_observations;
+	pf_->sensorUpdate(lx, ly, lt, inv, most_observations);
 
-		std::chrono::system_clock::time_point start_2, end_2;
-		start_2 = std::chrono::system_clock::now();
-		std::vector<double> most_observations;
-		pf_->sensorUpdate(lx, ly, lt, inv, most_observations);
-		end_2 = std::chrono::system_clock::now();
-		double time_2 = std::chrono::duration_cast<std::chrono::milliseconds>(end_2 - start_2).count();
+	double x_var, y_var, t_var, xy_cov, yt_cov, tx_cov;
+	pf_->meanPose(x, y, t, x_var, y_var, t_var, xy_cov, yt_cov, tx_cov);
 
-		static std::vector<double> data_2;
-		static int cnt_2 = 0;
-		cnt_2++ ;
-		if (time_2 > 0 && cnt_2 > 100){
-			data_2.push_back(time_2);
-			double ave_2 = 0.0, var_2 = 0.0;
-			for(const auto &x : data_2){
-				ave_2 += x;
-				var_2 += x * x;
-			}
-			ave_2 /= data_2.size();
-			var_2 = var_2 / data_2.size() - ave_2 * ave_2;
-			// std::cout << "観測更新　平均：" << ave_2 << ", 標準偏差：" << std::sqrt(var_2) << std::endl;
-		}
-		double x_var, y_var, t_var, xy_cov, yt_cov, tx_cov;
-		pf_->meanPose(x, y, t, x_var, y_var, t_var, xy_cov, yt_cov, tx_cov);
-
-		publishOdomFrame(x, y, t);
-		publishPose(x, y, t, x_var, y_var, t_var, xy_cov, yt_cov, tx_cov);
-		publishParticles();
-		for (auto observation : most_observations) 
-			publishScan(observation);
+	publishOdomFrame(x, y, t);
+	publishPose(x, y, t, x_var, y_var, t_var, xy_cov, yt_cov, tx_cov);
+	publishParticles();
+	for (auto observation : most_observations) 
+		publishScan(observation);
 
 
-		std_msgs::Float32 alpha_msg;
-		alpha_msg.data = static_cast<float>(pf_->alpha_);
-		alpha_pub_.publish(alpha_msg);
-		// matplot();
-	// }
+	std_msgs::Float32 alpha_msg;
+	alpha_msg.data = static_cast<float>(pf_->alpha_);
+	alpha_pub_.publish(alpha_msg);
 }
 
 void EMcl2Node::publishPose(double x, double y, double t,
