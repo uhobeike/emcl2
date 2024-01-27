@@ -82,7 +82,7 @@ void Mcl::resampling(void)
 	}
 
 	constexpr int MIN = 1;
-	constexpr int MAX = 3340;
+	constexpr int MAX = 1000;
 	constexpr int RAND_NUMS_TO_GENERATE = 100;
 	
 	std::random_device rd;

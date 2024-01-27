@@ -178,10 +178,10 @@ void EMcl2Node::loop(void)
 {
 	static int cnt = 0;
 	cnt++;
-	if(init_request_ || cnt == 10){
+	if(init_request_ || cnt == 100){
 		// pf_->initialize(init_x_, init_y_, init_t_, init_pose_cnt_);
 		// pf_->initialize(init_x_, init_y_, init_t_);
-		pf_->initialize(-43.8626899719, 9.43587398529, -1.57);
+		pf_->initialize(25.9981374749, 17.2470955661, -1.57);
 		init_request_ = false;
 	}
 	else if(simple_reset_request_){
