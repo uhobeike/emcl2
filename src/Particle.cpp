@@ -107,9 +107,9 @@ double Particle::likelihood(LikelihoodFieldMap *map, Scan &scan, int &valid_beam
 	int exec_cnt = 0;
 	static double time_sum = 0;
 
-	int scan_hani = 80;
-	int scan_begin =  scan.scan_mask_angle_begin_ * 2;
-	int scan_end =  scan.scan_mask_angle_end_ * 2;
+	int scan_hani = 40;
+	int scan_begin =  scan.scan_mask_angle_begin_ * 1;
+	int scan_end =  scan.scan_mask_angle_end_ * 1;
 
 	if(scan.scan_mask_angle_middle_){		
 		for(int i=scan_end;i<scan_begin;i+=scan.scan_increment_){			
@@ -133,7 +133,7 @@ double Particle::likelihood(LikelihoodFieldMap *map, Scan &scan, int &valid_beam
 			exec_cnt++;
 		}
 
-		for(int i=scan_end;i<720;i+=scan.scan_increment_){
+		for(int i=scan_end;i<scan.ranges_.size();i+=scan.scan_increment_){
 			uint16_t a = scan.directions_16bit_[i] + t + lidar_yaw;
 			double lx = lidar_x + scan.ranges_[i] * Mcl::cos_[a];
 			double ly = lidar_y + scan.ranges_[i] * Mcl::sin_[a];

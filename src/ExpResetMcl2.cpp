@@ -91,10 +91,7 @@ void ExpResetMcl2::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, 
 		double beam_matching_score;
 		p.s_ += scan;
 
-		if(p.s_.scan_mask_angle_middle_ > 1 || p.s_.scan_mask_angle_begin_ > 360 || p.s_.scan_mask_angle_end_ > 360)
-			beam_matching_score = 0;
-		else
-			beam_matching_score = p.likelihood(map_.get(), p.s_, valid_beam_sum_, scan_angle_cnt);
+		beam_matching_score = p.likelihood(map_.get(), p.s_, valid_beam_sum_, scan_angle_cnt);
 		p.w_ *= beam_matching_score;
 		beam_matching_score_sum_ += beam_matching_score;
 	}
