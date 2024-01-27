@@ -6,6 +6,8 @@
 #include "emcl/Mcl.h"
 #include <cmath>
 
+#include<ros/ros.h>
+
 namespace emcl2 {
 
 
@@ -34,6 +36,56 @@ double Particle::likelihood(LikelihoodFieldMap *map, Scan &scan)
 
 		ans += map->likelihood(lx, ly);
 	}
+	return ans;
+}
+
+double Particle::likelihood(LikelihoodFieldMap *map, Scan &scan, int &valid_beam_sum)
+{
+	uint16_t t = p_.get16bitRepresentation();
+	double lidar_x = p_.x_ + scan.lidar_pose_x_*Mcl::cos_[t] 
+				- scan.lidar_pose_y_*Mcl::sin_[t];
+	double lidar_y = p_.y_ + scan.lidar_pose_x_*Mcl::sin_[t] 
+				+ scan.lidar_pose_y_*Mcl::cos_[t];
+	uint16_t lidar_yaw = Pose::get16bitRepresentation(scan.lidar_pose_yaw_);
+	
+	double ans = 0.0;
+
+	// ROS_INFO("be: %d end: %d mid: %d", scan.observation_range_begin_, scan.observation_range_end_, scan.observation_range_middle_);
+
+	if(scan.observation_range_middle_){		
+		for(int i=scan.observation_range_end_;i<scan.observation_range_begin_;i+=scan.scan_increment_){			
+			uint16_t a = scan.directions_16bit_[i] + t + lidar_yaw;
+			double lx = lidar_x + scan.ranges_[i] * Mcl::cos_[a];
+			double ly = lidar_y + scan.ranges_[i] * Mcl::sin_[a];
+
+			ans += map->likelihood(lx, ly);
+			valid_beam_sum++;
+		}
+	}
+	else {
+		for(int i=0;i<scan.observation_range_begin_;i+=scan.scan_increment_){
+			uint16_t a = scan.directions_16bit_[i] + t + lidar_yaw;
+			double lx = lidar_x + scan.ranges_[i] * Mcl::cos_[a];
+			double ly = lidar_y + scan.ranges_[i] * Mcl::sin_[a];
+
+			ans += map->likelihood(lx, ly);
+			valid_beam_sum++;
+		}
+
+		for(int i=scan.observation_range_end_;i<scan.ranges_.size();i+=scan.scan_increment_){
+			uint16_t a = scan.directions_16bit_[i] + t + lidar_yaw;
+			double lx = lidar_x + scan.ranges_[i] * Mcl::cos_[a];
+			double ly = lidar_y + scan.ranges_[i] * Mcl::sin_[a];
+
+			ans += map->likelihood(lx, ly);
+			valid_beam_sum++;
+		}
+	}
+
+	// if (exec_cnt != observation_range){
+	// 	exit(1);
+	// }
+
 	return ans;
 }
 

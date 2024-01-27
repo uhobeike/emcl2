@@ -23,7 +23,8 @@ public:
 	Mcl(){}
 	Mcl(const Pose &p, int num, const Scan &scan,
 			const std::shared_ptr<OdomModel> &odom_model,
-			const std::shared_ptr<LikelihoodFieldMap> &map);
+			const std::shared_ptr<LikelihoodFieldMap> &map,
+			bool handle_unknown_obstacles, double observation_range);
 	~Mcl();
 
 	std::vector<Particle> particles_;
@@ -43,6 +44,11 @@ public:
 
 	static double cos_[(1<<16)];
 	static double sin_[(1<<16)];
+
+	Scan createObservationRange(Scan scan);
+
+	bool handle_unknown_obstacles_;
+	int observation_range_;
 protected:
 	Pose *last_odom_;
 	Pose *prev_odom_;
@@ -54,6 +60,7 @@ protected:
 	void resampling(void);
 	double normalizeBelief(void);
 	void resetWeight(void);
+	void resetObservationRange(Scan scan);
 
 	std::shared_ptr<OdomModel> odom_model_;
 	std::shared_ptr<LikelihoodFieldMap> map_;

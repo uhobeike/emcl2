@@ -15,14 +15,18 @@ ExpResetMcl2::ExpResetMcl2(const Pose &p, int num, const Scan &scan,
 				const std::shared_ptr<LikelihoodFieldMap> &map,
 				double alpha_th,
 				double expansion_radius_position, double expansion_radius_orientation,
-				double extraction_rate, double range_threshold, bool sensor_reset)
+				double extraction_rate, double range_threshold, 
+				bool sensor_reset, 
+				bool handle_unknown_obstacles, int observation_range)
 	: alpha_threshold_(alpha_th),
 	  expansion_radius_position_(expansion_radius_position),
 	  expansion_radius_orientation_(expansion_radius_orientation),
 	  extraction_rate_(extraction_rate),
 	  range_threshold_(range_threshold),
 	  sensor_reset_(sensor_reset),
-	  Mcl::Mcl(p, num, scan, odom_model, map)
+	  handle_unknown_obstacles_(handle_unknown_obstacles),
+	  observation_range_(observation_range),
+	  Mcl::Mcl(p, num, scan, odom_model, map, handle_unknown_obstacles, observation_range)
 {
 }
 
@@ -64,16 +68,41 @@ void ExpResetMcl2::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, 
 	if(valid_beams == 0)
 		return;
 
-	for(auto &p : particles_)
-		p.w_ *= p.likelihood(map_.get(), scan);
-
-	alpha_ = nonPenetrationRate( (int)(particles_.size()*extraction_rate_), map_.get(), scan);
-	ROS_INFO("ALPHA: %f / %f", alpha_, alpha_threshold_);
-	if(alpha_ < alpha_threshold_){
-		ROS_INFO("RESET");
-		expansionReset();
+	if (not Mcl::handle_unknown_obstacles_){
 		for(auto &p : particles_)
 			p.w_ *= p.likelihood(map_.get(), scan);
+
+		alpha_ = nonPenetrationRate( (int)(particles_.size()*extraction_rate_), map_.get(), scan);
+		ROS_INFO("ALPHA: %f / %f", alpha_, alpha_threshold_);
+		if(alpha_ < alpha_threshold_){
+			ROS_INFO("RESET");
+			expansionReset();
+			for(auto &p : particles_)
+				p.w_ *= p.likelihood(map_.get(), scan);
+		}
+	}
+	else if (Mcl::handle_unknown_obstacles_){
+		double beam_matching_score_sum = 0;
+		int valid_beam_sum = 0;
+
+		for(auto &p : particles_){
+			p.s_ += scan;
+
+			auto beam_matching_score = p.likelihood(map_.get(), p.s_, valid_beam_sum);
+			// ROS_INFO("score: %f", beam_matching_score);
+			p.w_ *= beam_matching_score;
+			beam_matching_score_sum += beam_matching_score;
+		}
+
+		normalizeBelief();
+		alpha_ = beam_matching_score_sum/valid_beam_sum;
+		// ROS_INFO("ALPHA: %f / %f", alpha_, alpha_threshold_);
+		if(alpha_ < alpha_threshold_){
+			ROS_INFO("RESET");
+			expansionReset();
+			for(auto &p : particles_)
+				p.w_ *= p.likelihood(map_.get(), scan);
+		}
 	}
 
 	if(normalizeBelief() > 0.000001)

@@ -17,9 +17,11 @@ public:
 	Particle(double x, double y, double t, double w);
 
 	double likelihood(LikelihoodFieldMap *map, Scan &scan);
+	double likelihood(LikelihoodFieldMap *map, Scan &scan, int &valid_beam_sum);
 	bool wallConflict(LikelihoodFieldMap *map, Scan &scan, double threshold, bool replace);
 	Pose p_;
 	double w_;
+	Scan s_;
 
 	Particle operator =(const Particle &p);
 private:
