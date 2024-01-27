@@ -7,14 +7,14 @@
 #include <ros/ros.h>
 #include "emcl/ExpResetMcl2.h"
 
-#include "tf2_ros/transform_broadcaster.h"
-#include "tf2_ros/transform_listener.h"
-#include "tf2_ros/message_filter.h"
-#include "tf2/LinearMath/Transform.h"
+#include <tf2_ros/transform_broadcaster.h>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_ros/message_filter.h>
+#include <tf2/LinearMath/Transform.h>
 
-#include "sensor_msgs/LaserScan.h"
-#include "geometry_msgs/PoseWithCovarianceStamped.h"
-#include "std_srvs/Empty.h"
+#include <sensor_msgs/LaserScan.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <std_srvs/Empty.h>
 
 namespace emcl2 {
 
@@ -26,10 +26,6 @@ public:
 
 	void loop(void);
 	int getOdomFreq(void);
-	void initialScanRandomAngle();
-	void matplot();
-	bool get_scan_;
-	ros::Timer timer_;
 private:
 	std::shared_ptr<ExpResetMcl2> pf_;
 	ros::NodeHandle nh_;
@@ -44,6 +40,8 @@ private:
 
 	ros::ServiceServer global_loc_srv_;
 
+	ros::Time scan_time_stamp_;
+
 	std::string footprint_frame_id_;
 	std::string global_frame_id_;
 	std::string odom_frame_id_;
@@ -56,19 +54,17 @@ private:
 
 	tf2::Transform latest_tf_;
 
-	sensor_msgs::LaserScan scan_;
-
 	int odom_freq_;
 	bool init_request_;
 	bool simple_reset_request_;
 	double init_x_, init_y_, init_t_;
+	bool scan_receive_;
 
 	void publishPose(double x, double y, double t,
 			double x_dev, double y_dev, double t_dev,
 			double xy_cov, double yt_cov, double tx_cov);
 	void publishOdomFrame(double x, double y, double t);
 	void publishParticles(void);
-	void publishScan(double observation);
 	void sendTf(void);
 	bool getOdomPose(double& x, double& y, double& yaw);
 	bool getLidarPose(double& x, double& y, double& yaw, bool& inv);

@@ -17,12 +17,11 @@ public:
 			double alpha_th,
 			double expansion_radius_position, double expansion_radius_orientation,
 			double extraction_rate, double successive_penetration_threshold,
-			bool sensor_reset);
+			bool sensor_reset,
+			bool handle_unknown_obstacles, int observation_range);
 	~ExpResetMcl2();
 
-	void sensorUpdate(double lidar_x, double lidar_y, double lidar_t, bool inv, std::vector<double> &most_observations);
-	std::vector<std::vector<int>> getParticleScanAngles();
-	std::vector<std::vector<int>> particle_scan_angles_;
+	void sensorUpdate(double lidar_x, double lidar_y, double lidar_t, bool inv);
 private:
 	double alpha_threshold_;
 	double expansion_radius_position_;
@@ -33,11 +32,10 @@ private:
 	bool sensor_reset_;
 
 	void expansionReset(void);
-
-	//bool Particle::isPenetrating(
-	bool getMultipleObservation(std::vector<int> &scan_angle_cnt, std::vector<u_int8_t> &multiple_observation);
-
 	double nonPenetrationRate(int skip, LikelihoodFieldMap *map, Scan &scan);
+
+	bool handle_unknown_obstacles_;
+	int observation_range_;
 };
 
 }

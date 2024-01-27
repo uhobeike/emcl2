@@ -20,9 +20,9 @@ Scan& Scan::operator=(const Scan &s)
 	range_max_ = s.range_max_;
 	range_min_ = s.range_min_;
 
-  scan_mask_angle_begin_ = s.scan_mask_angle_begin_;
-  scan_mask_angle_middle_ = s.scan_mask_angle_middle_;
-  scan_mask_angle_end_ = s.scan_mask_angle_end_;
+	observation_range_begin_ = s.observation_range_begin_;
+	observation_range_end_ = s.observation_range_end_;
+	observation_range_middle_ = s.observation_range_middle_;
 
 	// It's not thread safe.
 	ranges_.clear();

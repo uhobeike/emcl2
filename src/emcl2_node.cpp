@@ -5,11 +5,10 @@
 #include "emcl/emcl2_node.h"
 #include "emcl/Pose.h"
 
-#include "tf2/utils.h"
-#include "geometry_msgs/PoseArray.h"
-#include "nav_msgs/GetMap.h"
-#include "std_msgs/Float32.h"
-#include <chrono>
+#include <tf2/utils.h>
+#include <geometry_msgs/PoseArray.h>
+#include <nav_msgs/GetMap.h>
+#include <std_msgs/Float32.h>
 
 namespace emcl2 {
 
@@ -17,28 +16,23 @@ EMcl2Node::EMcl2Node() : private_nh_("~")
 {
 	initCommunication();
 	initPF();
-	// matplot();
-
 
 	private_nh_.param("odom_freq", odom_freq_, 20);
 
-	init_request_ = false;
+	init_request_ = true;
 	simple_reset_request_ = false;
-	get_scan_ = false;
+	scan_receive_ = false;
 }
 
 EMcl2Node::~EMcl2Node()
 {
 }
 
-int init_pose_cnt_ = 0;
-
 void EMcl2Node::initCommunication(void)
 {
 	particlecloud_pub_ = nh_.advertise<geometry_msgs::PoseArray>("particlecloud", 2, true);
 	pose_pub_ = nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("mcl_pose", 2, true);
 	alpha_pub_ = nh_.advertise<std_msgs::Float32>("alpha", 2, true);
-	scan_pub_ = nh_.advertise<sensor_msgs::LaserScan>("most_observation", 2, true);
 	laser_scan_sub_ = nh_.subscribe("scan", 2, &EMcl2Node::cbScan, this);
 	initial_pose_sub_ = nh_.subscribe("initialpose", 2, &EMcl2Node::initialPoseReceived, this);
 
@@ -65,13 +59,9 @@ void EMcl2Node::initPF(void)
 	private_nh_.param("scan_increment", scan.scan_increment_, 1);
 
 	Pose init_pose;
-	private_nh_.param("initial_pose_x", init_pose.x_, -43.8564682007);
-	private_nh_.param("initial_pose_y", init_pose.y_, 11.7848844528);
-	private_nh_.param("initial_pose_a", init_pose.t_, -1.57);
-
-	// init_pose.x_ = -43.85646;
-	// init_pose.y_ = 11.784884;
-	// init_pose.t_ = -1.57;
+	private_nh_.param("initial_pose_x", init_pose.x_, 0.0);
+	private_nh_.param("initial_pose_y", init_pose.y_, 0.0);
+	private_nh_.param("initial_pose_a", init_pose.t_, 0.0);
 
 	int num_particles;
 	double alpha_th;
@@ -87,39 +77,16 @@ void EMcl2Node::initPF(void)
 	private_nh_.param("range_threshold", range_threshold, 0.1);
 	private_nh_.param("sensor_reset", sensor_reset, true);
 
+	bool handle_unknown_obstacles;
+	int observation_range;
+	private_nh_.param("handle_unknown_obstacles", handle_unknown_obstacles, true);
+	private_nh_.param("observation_range", observation_range, 30);
+
 	pf_.reset(new ExpResetMcl2(init_pose, num_particles, scan, om, map,
 				alpha_th, ex_rad_pos, ex_rad_ori,
-				extraction_rate, range_threshold, sensor_reset));
+				extraction_rate, range_threshold, sensor_reset,
+				handle_unknown_obstacles, observation_range));
 }
-
-// void EMcl2Node::matplot(void)
-// {
-// 	// Matplot mplt;
-
-// 	timer_ = nh_.createTimer(
-//       ros::Duration(0.01), [&](auto &) {
-// 		std::shared_ptr<Matplot> mplt;
-// 		mplt.reset();
-// 		mplt->show();
-// 		mplt->clear();
-// 		std::vector<std::vector<int>> particle_scan_angles;
-// 		static bool once_flag = false;
-// 		if (!once_flag)
-// 		particle_scan_angles = pf_->getParticleScanAngles();
-// 		ROS_ERROR("%d",once_flag);
-// 		once_flag = true;
-// 		int num = 0;
-
-// 		for (auto particle_scan_angle : particle_scan_angles)
-// 		{
-// 			++num;
-// 			std::vector<int> particle_num_v(particle_scan_angle.size(),num);
-
-// 			mplt->particle_usescan_angle_plot(particle_num_v, particle_scan_angle);
-// 		}
-// 		mplt->show();
-// 	});
-// }
 
 std::shared_ptr<OdomModel> EMcl2Node::initOdometry(void)
 {
@@ -153,32 +120,26 @@ std::shared_ptr<LikelihoodFieldMap> EMcl2Node::initMap(void)
 
 void EMcl2Node::cbScan(const sensor_msgs::LaserScan::ConstPtr &msg)
 {
-		scan_frame_id_ = msg->header.frame_id;
-		pf_->setScan(msg);
-		scan_ = *msg;
-		get_scan_ = true;
+	scan_time_stamp_ = msg->header.stamp;
+	scan_frame_id_ = msg->header.frame_id;
+	pf_->setScan(msg);
+	scan_receive_ = true;
 }
 
 void EMcl2Node::initialPoseReceived(const geometry_msgs::PoseWithCovarianceStampedConstPtr& msg)
 {
 	init_request_ = true;
 
-	init_pose_cnt_++;
 	init_x_ = msg->pose.pose.position.x;
 	init_y_ = msg->pose.pose.position.y;
 	init_t_ = tf2::getYaw(msg->pose.pose.orientation);
 }
 
-void EMcl2Node::initialScanRandomAngle()
-{
-	pf_->initialize(init_x_, init_y_, init_t_);
-}
-
 void EMcl2Node::loop(void)
 {
-	static int cnt = 0;
-	cnt++;
-	if(init_request_ || cnt == 100){
+	if (not scan_receive_)
+		return ;
+	if(init_request_){
 		pf_->initialize(25.9981374749, 17.2470955661, -1.57);
 		init_request_ = false;
 	}
@@ -201,8 +162,7 @@ void EMcl2Node::loop(void)
 		return;
 	}
 
-	std::vector<double> most_observations;
-	pf_->sensorUpdate(lx, ly, lt, inv, most_observations);
+	pf_->sensorUpdate(lx, ly, lt, inv);
 
 	double x_var, y_var, t_var, xy_cov, yt_cov, tx_cov;
 	pf_->meanPose(x, y, t, x_var, y_var, t_var, xy_cov, yt_cov, tx_cov);
@@ -210,9 +170,6 @@ void EMcl2Node::loop(void)
 	publishOdomFrame(x, y, t);
 	publishPose(x, y, t, x_var, y_var, t_var, xy_cov, yt_cov, tx_cov);
 	publishParticles();
-	for (auto observation : most_observations) 
-		publishScan(observation);
-
 
 	std_msgs::Float32 alpha_msg;
 	alpha_msg.data = static_cast<float>(pf_->alpha_);
@@ -254,12 +211,12 @@ void EMcl2Node::publishOdomFrame(double x, double y, double t)
 		tf2::Quaternion q;
 		q.setRPY(0, 0, t);
 		tf2::Transform tmp_tf(q, tf2::Vector3(x, y, 0.0));
-				
+
 		geometry_msgs::PoseStamped tmp_tf_stamped;
 		tmp_tf_stamped.header.frame_id = footprint_frame_id_;
-		tmp_tf_stamped.header.stamp = ros::Time(0);
+		tmp_tf_stamped.header.stamp = scan_time_stamp_;
 		tf2::toMsg(tmp_tf.inverse(), tmp_tf_stamped.pose);
-		
+
 		tf_->transform(tmp_tf_stamped, odom_to_map, odom_frame_id_);
 
 	}catch(tf2::TransformException){
@@ -267,14 +224,15 @@ void EMcl2Node::publishOdomFrame(double x, double y, double t)
 		return;
 	}
 	tf2::convert(odom_to_map.pose, latest_tf_);
-	
-	ros::Time transform_expiration = (ros::Time(ros::Time::now().toSec() + 0.2));
+
+	double transform_tolerance = 0.2;
+	ros::Time transform_expiration = (ros::Time(scan_time_stamp_.toSec() + transform_tolerance));
 	geometry_msgs::TransformStamped tmp_tf_stamped;
 	tmp_tf_stamped.header.frame_id = global_frame_id_;
 	tmp_tf_stamped.header.stamp = transform_expiration;
 	tmp_tf_stamped.child_frame_id = odom_frame_id_;
 	tf2::convert(latest_tf_.inverse(), tmp_tf_stamped.transform);
-	
+
 	tfb_->sendTransform(tmp_tf_stamped);
 }
 
@@ -297,20 +255,6 @@ void EMcl2Node::publishParticles(void)
 	particlecloud_pub_.publish(cloud_msg);
 }
 
-void EMcl2Node::publishScan(double observation)
-{
-	int cnt = 0;
-	for (auto& scan: scan_.ranges){
-		if(cnt == observation){
-			
-		}
-		else 
-			scan = INFINITY;
-		cnt++;
-	}
-	scan_pub_.publish(scan_);
-}
-
 bool EMcl2Node::getOdomPose(double& x, double& y, double& yaw)
 {
 	geometry_msgs::PoseStamped ident;
@@ -322,7 +266,7 @@ bool EMcl2Node::getOdomPose(double& x, double& y, double& yaw)
 	try{
 		this->tf_->transform(ident, odom_pose, odom_frame_id_);
 	}catch(tf2::TransformException e){
-    		ROS_WARN("Failed to compute odom pose, skipping scan (%s)", e.what());
+		ROS_WARN("Failed to compute odom pose, skipping scan (%s)", e.what());
 		return false;
 	}
 	x = odom_pose.pose.position.x;
@@ -343,7 +287,7 @@ bool EMcl2Node::getLidarPose(double& x, double& y, double& yaw, bool& inv)
 	try{
 		this->tf_->transform(ident, lidar_pose, base_frame_id_);
 	}catch(tf2::TransformException e){
-    		ROS_WARN("Failed to compute lidar pose, skipping scan (%s)", e.what());
+		ROS_WARN("Failed to compute lidar pose, skipping scan (%s)", e.what());
 		return false;
 	}
 	x = lidar_pose.pose.position.x;
@@ -374,17 +318,11 @@ int main(int argc, char **argv)
 	emcl2::EMcl2Node node;
 	ros::NodeHandle pnh("~");
 
-	ros::AsyncSpinner spinner(pnh.param("num_callback_threads", 4));
-  	spinner.start();
-
 	static bool init_flag = true;
 	ros::Rate loop_rate(node.getOdomFreq());
 	while (ros::ok()){
-		if(node.get_scan_ && init_flag){
-			node.initialScanRandomAngle();
-			init_flag = false;
-		}
-    	node.loop();
+		node.loop();
+		ros::spinOnce();
 		loop_rate.sleep();
 	}
 

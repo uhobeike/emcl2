@@ -3,13 +3,10 @@
 //Some lines are derived from https://github.com/ros-planning/navigation/tree/noetic-devel/amcl. 
 
 #include "emcl/ExpResetMcl2.h"
-#include "emcl/Matplot.h"
 #include <ros/ros.h>
 #include <iostream>
-#include <stdlib.h>
+#include <cstdlib>
 #include <cmath>
-#include <chrono>
-#include <ctime>
 
 namespace emcl2 {
 
@@ -18,14 +15,18 @@ ExpResetMcl2::ExpResetMcl2(const Pose &p, int num, const Scan &scan,
 				const std::shared_ptr<LikelihoodFieldMap> &map,
 				double alpha_th, 
 				double expansion_radius_position, double expansion_radius_orientation,
-				double extraction_rate, double range_threshold, bool sensor_reset)
+				double extraction_rate, double range_threshold,
+				bool sensor_reset,
+				bool handle_unknown_obstacles, int observation_range)
 	: alpha_threshold_(alpha_th), 
 	  expansion_radius_position_(expansion_radius_position),
 	  expansion_radius_orientation_(expansion_radius_orientation),
 	  extraction_rate_(extraction_rate),
 	  range_threshold_(range_threshold),
 	  sensor_reset_(sensor_reset),
-	  Mcl::Mcl(p, num, scan, odom_model, map)
+	  handle_unknown_obstacles_(handle_unknown_obstacles),
+	  observation_range_(observation_range),
+	  Mcl::Mcl(p, num, scan, odom_model, map, handle_unknown_obstacles, observation_range)
 {
 }
 
@@ -33,7 +34,7 @@ ExpResetMcl2::~ExpResetMcl2()
 {
 }
 
-void ExpResetMcl2::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, bool inv, std::vector<double> &most_observations)
+void ExpResetMcl2::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, bool inv)
 {
 	if(processed_seq_ == scan_.seq_)
 		return;
@@ -67,28 +68,41 @@ void ExpResetMcl2::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, 
 	if(valid_beams == 0)
 		return;
 
-	beam_matching_score_sum_ = 0;
-	valid_beam_sum_= 0;
+	if (not Mcl::handle_unknown_obstacles_){
+		for(auto &p : particles_)
+			p.w_ *= p.likelihood(map_.get(), scan);
 
-	int cnt = 0; 
-	std::vector<int> scan_angle_cnt(360,0);
-
-	if (particles_.size() != 1000){
-		std::cout << "Not particle num" << "\n"; 
-		exit(1);
+		alpha_ = nonPenetrationRate( (int)(particles_.size()*extraction_rate_), map_.get(), scan);
+		ROS_INFO("ALPHA: %f / %f", alpha_, alpha_threshold_);
+		if(alpha_ < alpha_threshold_){
+			ROS_INFO("RESET");
+			expansionReset();
+			for(auto &p : particles_)
+				p.w_ *= p.likelihood(map_.get(), scan);
+		}
 	}
+	else if (Mcl::handle_unknown_obstacles_){
+		double beam_matching_score_sum = 0;
+		int valid_beam_sum = 0;
 
-	for(auto &p : particles_){
-		double beam_matching_score;
-		p.s_ += scan;
+		for(auto &p : particles_){
+			p.s_ += scan;
 
-		beam_matching_score = p.likelihood(map_.get(), p.s_, valid_beam_sum_, scan_angle_cnt);
-		p.w_ *= beam_matching_score;
-		beam_matching_score_sum_ += beam_matching_score;
+			auto beam_matching_score = p.likelihood(map_.get(), p.s_, valid_beam_sum);
+			p.w_ *= beam_matching_score;
+			beam_matching_score_sum += beam_matching_score;
+		}
+
+		normalizeBelief();
+		alpha_ = beam_matching_score_sum/valid_beam_sum;
+		// ROS_INFO("ALPHA: %f / %f", alpha_, alpha_threshold_);
+		if(alpha_ < alpha_threshold_){
+			ROS_INFO("RESET");
+			expansionReset();
+			for(auto &p : particles_)
+				p.w_ *= p.likelihood(map_.get(), scan);
+		}
 	}
-
-	normalizeBelief();
-	alpha_ = beam_matching_score_sum_/valid_beam_sum_;
 
 	if(normalizeBelief() > 0.000001)
 		resampling();
@@ -99,22 +113,6 @@ void ExpResetMcl2::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, 
 
 
 }
-
-bool ExpResetMcl2::getMultipleObservation(std::vector<int> &scan_angle_cnt, std::vector<uint8_t> &multiple_observation){
-	int cnt=0;
-	for (auto scan_angle : scan_angle_cnt)
-	{
-		if (scan_angle > 1000)
-			multiple_observation.push_back(cnt);
-		++cnt;  
-	}
-	if (multiple_observation.size() > 1){
-		return true;
-	}
-	else
-		return false;
-}
-
 
 double ExpResetMcl2::nonPenetrationRate(int skip, LikelihoodFieldMap *map, Scan &scan)
 {
@@ -143,11 +141,6 @@ void ExpResetMcl2::expansionReset(void)
 		p.p_.t_ += 2*((double)rand()/RAND_MAX - 0.5)*expansion_radius_orientation_;
 		p.w_ = 1.0/particles_.size();
 	}
-}
-
-std::vector<std::vector<int>> ExpResetMcl2::getParticleScanAngles(void)
-{
-	return particle_scan_angles_;
 }
 
 }

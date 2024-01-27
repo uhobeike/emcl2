@@ -20,9 +20,9 @@ public:
 	double range_max_;
 	double range_min_;
 
-  int scan_mask_angle_begin_;
-  bool scan_mask_angle_middle_;
-  int scan_mask_angle_end_;
+	int observation_range_begin_;
+	bool observation_range_middle_;
+	int observation_range_end_;
 
 	double lidar_pose_x_;
 	double lidar_pose_y_;

@@ -4,18 +4,17 @@
 #include "emcl/Mcl.h"
 #include <ros/ros.h>
 #include <iostream>
-#include <stdlib.h>
+#include <cstdlib>
 #include <cmath>
-#include <random>
-#include <fstream>
-#include <chrono>
 
 namespace emcl2 {
 
 Mcl::Mcl(const Pose &p, int num, const Scan &scan,
 		const std::shared_ptr<OdomModel> &odom_model,
-		const std::shared_ptr<LikelihoodFieldMap> &map)
-	: last_odom_(NULL), prev_odom_(NULL)
+		const std::shared_ptr<LikelihoodFieldMap> &map,
+		bool handle_unknown_obstacles, double observation_range)
+	: last_odom_(NULL), prev_odom_(NULL),
+	  handle_unknown_obstacles_(handle_unknown_obstacles), observation_range_(observation_range)
 {
 	odom_model_ = move(odom_model);
 	map_ = move(map);
@@ -30,9 +29,6 @@ Mcl::Mcl(const Pose &p, int num, const Scan &scan,
 
 	processed_seq_ = -1;
 	alpha_ = 1.0;
-
-	beam_matching_score_sum_= 0;
-	valid_beam_sum_ = 0;
 
 	for(int i=0;i<(1<<16);i++){
 		cos_[i] = cos(M_PI*i/(1<<15));
@@ -95,7 +91,7 @@ void Mcl::resampling(void)
 	for(auto &p : particles_){
 		random_scan_cnt++;
 		if (result.end() != std::find(result.begin(), result.end(), random_scan_cnt)){
-			p.s_ = randomScanRange(p.s_);
+			p.s_ = createObservationRange(p.s_);
 		}
 	}
 }
@@ -105,11 +101,9 @@ void Mcl::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, bool inv)
 	if(processed_seq_ == scan_.seq_)
 		return;
 
-    std::chrono::system_clock::time_point start_2, end_2;
-    start_2 = std::chrono::system_clock::now();
 	Scan scan;
 	int seq = -1;
-	while(seq != scan_.seq_){//trying to copy the latest scan before next 
+	while(seq != scan_.seq_){//trying to copy the latest scan before next
 		seq = scan_.seq_;
 		scan = scan_;
 	}
@@ -155,24 +149,6 @@ void Mcl::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, bool inv)
 		resetWeight();
 
 	processed_seq_ = scan_.seq_;
-
-	end_2 = std::chrono::system_clock::now();
-	double time_2 = std::chrono::duration_cast<std::chrono::milliseconds>(end_2 - start_2).count();
-
-	static std::vector<double> data_2;
-	static int cnt_2 = 0;
-	cnt_2++ ;
-	if (time_2 > 0 && cnt_2 > 100){
-		data_2.push_back(time_2);
-		double ave_2 = 0.0, var_2 = 0.0;
-		for(const auto &x : data_2){
-			ave_2 += x;
-			var_2 += x * x;
-		}
-		ave_2 /= data_2.size();
-		var_2 = var_2 / data_2.size() - ave_2 * ave_2;
-		// std::cout << "Mcl::sensorUpdate　平均：" << ave_2 << ", 標準偏差：" << std::sqrt(var_2) << std::endl;
-	}
 }
 
 void Mcl::motionUpdate(double x, double y, double t)
@@ -298,67 +274,40 @@ void Mcl::resetWeight(void)
 		p.w_ = 1.0/particles_.size();
 }
 
+void Mcl::resetObservationRange(Scan scan)
+{
+	for(auto &p : particles_)
+		p.s_ = createObservationRange(scan);
+}
+
 void Mcl::initialize(double x, double y, double t)
-{	
+{
 	Pose new_pose(x, y, t);
 	Scan scan = scan_;
-	for(auto &p : particles_){
+	for(auto &p : particles_)
 		p.p_ = new_pose;
-	p.s_ = randomScanRange(scan);
-	}
 
 	resetWeight();
-
-	resetWeight();
+	
+	if (handle_unknown_obstacles_)
+		resetObservationRange(scan);
 }
 
-void Mcl::initialize(double x, double y, double t, int cnt)
-{	
-	Scan scan = scan_;
-	int p_cnt = 0;
-
-	if (cnt == 1){
-		Pose new_pose_1(x+0.5, y, t);
-		for(auto &p : particles_){
-			if(p_cnt < particles_.size()/2){
-				p.p_ = new_pose_1;
-				p.s_ = randomScanRange(scan);
-			}
-			p_cnt++;
-		}
-	}
-
-	p_cnt=0;
-
-	if (cnt == 2){
-		Pose new_pose_2(x-0.5, y, t);
-		for(auto &p : particles_){
-			if(p_cnt >= particles_.size()/2 && p_cnt < particles_.size()){
-				p.p_ = new_pose_2;
-				p.s_ = randomScanRange(scan);
-			}
-			p_cnt++;
-		}
-	}
-
-	resetWeight();
-}
-
-Scan Mcl::randomScanRange(Scan scan)
+Scan Mcl::createObservationRange(Scan scan)
 {
   std::random_device seed_gen;
   std::default_random_engine engine(seed_gen());
 
   std::uniform_int_distribution<> dist_angle(0, scan.ranges_.size());
 
-  scan.scan_mask_angle_begin_ = dist_angle(engine);
+  scan.observation_range_begin_ = dist_angle(engine);
 
-  scan.scan_mask_angle_end_ = scan.scan_mask_angle_begin_ + 320;   //40
+  scan.observation_range_end_ = scan.observation_range_begin_ + 320;   //40
 
-  scan.scan_mask_angle_middle_ = false;
-  if (scan.scan_mask_angle_end_ >= scan.ranges_.size()){
-    scan.scan_mask_angle_middle_ = true;
-    scan.scan_mask_angle_end_ = scan.scan_mask_angle_end_ - static_cast<int>(scan.ranges_.size()); 
+  scan.observation_range_middle_ = false;
+  if (scan.observation_range_end_ >= scan.ranges_.size()){
+    scan.observation_range_middle_ = true;
+    scan.observation_range_end_ = scan.observation_range_end_ - static_cast<int>(scan.ranges_.size()); 
   }
 
   return scan;
