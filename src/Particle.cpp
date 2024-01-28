@@ -6,8 +6,6 @@
 #include "emcl/Mcl.h"
 #include <cmath>
 
-#include<ros/ros.h>
-
 namespace emcl2 {
 
 
@@ -39,7 +37,7 @@ double Particle::likelihood(LikelihoodFieldMap *map, Scan &scan)
 	return ans;
 }
 
-double Particle::likelihood(LikelihoodFieldMap *map, Scan &scan, int &valid_beam_sum)
+double Particle::likelihood(LikelihoodFieldMap *map, Scan &scan, int &use_beam_sum)
 {
 	uint16_t t = p_.get16bitRepresentation();
 	double lidar_x = p_.x_ + scan.lidar_pose_x_*Mcl::cos_[t] 
@@ -49,53 +47,35 @@ double Particle::likelihood(LikelihoodFieldMap *map, Scan &scan, int &valid_beam
 	uint16_t lidar_yaw = Pose::get16bitRepresentation(scan.lidar_pose_yaw_);
 
 	double ans = 0.0;
-	static int p_cnt = 0;
-	int exec_cnt = 0;
-	static double time_sum = 0;
-
-	int scan_hani = 40;
-	int scan_begin =  scan.observation_range_begin_ * 1;
-	int scan_end =  scan.observation_range_end_ * 1;
 
 	if(scan.observation_range_middle_){		
-		for(int i=scan_end;i<scan_begin;i+=scan.scan_increment_){			
+		for(int i=scan.observation_range_end_;i<scan.observation_range_begin_;i+=scan.scan_increment_){			
 			uint16_t a = scan.directions_16bit_[i] + t + lidar_yaw;
 			double lx = lidar_x + scan.ranges_[i] * Mcl::cos_[a];
 			double ly = lidar_y + scan.ranges_[i] * Mcl::sin_[a];
 
 			ans += map->likelihood(lx, ly);
-			++valid_beam_sum;
-			exec_cnt++;
+			use_beam_sum++;
 		}
 	}
 	else {
-		for(int i=0;i<scan_begin;i+=scan.scan_increment_){
+		for(int i=0;i<scan.observation_range_begin_;i+=scan.scan_increment_){
 			uint16_t a = scan.directions_16bit_[i] + t + lidar_yaw;
 			double lx = lidar_x + scan.ranges_[i] * Mcl::cos_[a];
 			double ly = lidar_y + scan.ranges_[i] * Mcl::sin_[a];
 
 			ans += map->likelihood(lx, ly);
-			++valid_beam_sum;
-			exec_cnt++;
+			use_beam_sum++;
 		}
 
-		for(int i=scan_end;i<scan.ranges_.size();i+=scan.scan_increment_){
+		for(int i=scan.observation_range_end_;i<scan.ranges_.size();i+=scan.scan_increment_){
 			uint16_t a = scan.directions_16bit_[i] + t + lidar_yaw;
 			double lx = lidar_x + scan.ranges_[i] * Mcl::cos_[a];
 			double ly = lidar_y + scan.ranges_[i] * Mcl::sin_[a];
 
 			ans += map->likelihood(lx, ly);
-			++valid_beam_sum;
-			exec_cnt++;
+			use_beam_sum++;
 		}
-	}
-
-	if (exec_cnt != scan_hani){
-		std::cout << "debug exec_cnt: " << exec_cnt << ", " 
-										<< scan.observation_range_middle_ << ", "
-										<< scan.observation_range_begin_ << ", "
-										<< scan.observation_range_end_ << "\n";
-		exit(1);
 	}
 
 	return ans;

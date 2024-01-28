@@ -17,7 +17,7 @@ public:
 	Particle(double x, double y, double t, double w);
 
 	double likelihood(LikelihoodFieldMap *map, Scan &scan);
-	double likelihood(LikelihoodFieldMap *map, Scan &scan, int &valid_beam_sum);
+	double likelihood(LikelihoodFieldMap *map, Scan &scan, int &use_beam_sum);
 	bool wallConflict(LikelihoodFieldMap *map, Scan &scan, double threshold, bool replace);
 	Pose p_;
 	double w_;
@@ -27,9 +27,6 @@ public:
 private:
 	bool isPenetrating(double ox, double oy, double range, uint16_t direction, 
 			LikelihoodFieldMap *map, double &hit_lx, double &hit_ly);
-
-	bool checkWallConflict(LikelihoodFieldMap *map, double ox, double oy, 
-			double range, uint16_t direction, double threshold, bool replace);
 
 	void sensorReset(double ox, double oy,
 		double range1, uint16_t direction1, double hit_lx1, double hit_ly1,

@@ -74,24 +74,26 @@ void Mcl::resampling(void)
 		particles_[i].s_ = old[chosen[i]].s_;
 	}
 
-	constexpr int MIN = 1;
-	constexpr int MAX = 1000;
-	constexpr int RAND_NUMS_TO_GENERATE = 100;
-	
-	std::random_device rd;
-	std::mt19937 eng(rd());
-	std::uniform_int_distribution<int> distr(MIN, MAX);
-	std::vector<int> result;
+	if(handle_unknown_obstacles_){
+		int min_particles_size = 1;
+		int max_particles_size = particles_.size();
+		int sampling_rate = 0.1;
+		
+		std::random_device rd;
+		std::mt19937 eng(rd());
+		std::uniform_int_distribution<int> distr(min_particles_size, max_particles_size);
+		std::vector<int> result;
 
-	for (int i=0;i<RAND_NUMS_TO_GENERATE;i++){
-		result.push_back(distr(eng));
-	}
+		for (int i=0;i<max_particles_size*sampling_rate;i++){
+			result.push_back(distr(eng));
+		}
 
-	int random_scan_cnt = 0;
-	for(auto &p : particles_){
-		random_scan_cnt++;
-		if (result.end() != std::find(result.begin(), result.end(), random_scan_cnt)){
-			p.s_ = createObservationRange(p.s_);
+		int random_scan_cnt = 0;
+		for(auto &p : particles_){
+			random_scan_cnt++;
+			if (result.end() != std::find(result.begin(), result.end(), random_scan_cnt)){
+				p.s_ = createObservationRange(p.s_);
+			}
 		}
 	}
 }
@@ -293,26 +295,6 @@ void Mcl::initialize(double x, double y, double t)
 		resetObservationRange(scan);
 }
 
-Scan Mcl::createObservationRange(Scan scan)
-{
-  std::random_device seed_gen;
-  std::default_random_engine engine(seed_gen());
-
-  std::uniform_int_distribution<> dist_angle(0, scan.ranges_.size());
-
-  scan.observation_range_begin_ = dist_angle(engine);
-
-  scan.observation_range_end_ = scan.observation_range_begin_ + 320;   //40
-
-  scan.observation_range_middle_ = false;
-  if (scan.observation_range_end_ >= scan.ranges_.size()){
-    scan.observation_range_middle_ = true;
-    scan.observation_range_end_ = scan.observation_range_end_ - static_cast<int>(scan.ranges_.size()); 
-  }
-
-  return scan;
-}
-
 void Mcl::simpleReset(void)
 {
 	std::vector<Pose> poses;
@@ -322,6 +304,26 @@ void Mcl::simpleReset(void)
 		particles_[i].p_ = poses[i];
 		particles_[i].w_ = 1.0/particles_.size();
 	}
+}
+
+Scan Mcl::createObservationRange(Scan scan)
+{
+  std::random_device seed_gen;
+  std::default_random_engine engine(seed_gen());
+
+  std::uniform_int_distribution<> dist_angle(0, scan.ranges_.size());
+
+  scan.observation_range_begin_ = dist_angle(engine);
+
+  scan.observation_range_end_ = scan.observation_range_begin_ + 320;
+
+  scan.observation_range_middle_ = false;
+  if (scan.observation_range_end_ >= scan.ranges_.size()){
+    scan.observation_range_middle_ = true;
+    scan.observation_range_end_ = scan.observation_range_end_ - static_cast<int>(scan.ranges_.size()); 
+  }
+
+  return scan;
 }
 
 }

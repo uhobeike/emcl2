@@ -83,18 +83,18 @@ void ExpResetMcl2::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, 
 	}
 	else if (Mcl::handle_unknown_obstacles_){
 		double beam_matching_score_sum = 0;
-		int valid_beam_sum = 0;
+		int use_beam_sum = 0;
 
 		for(auto &p : particles_){
 			p.s_ += scan;
 
-			auto beam_matching_score = p.likelihood(map_.get(), p.s_, valid_beam_sum);
+			auto beam_matching_score = p.likelihood(map_.get(), p.s_, use_beam_sum);
 			p.w_ *= beam_matching_score;
 			beam_matching_score_sum += beam_matching_score;
 		}
 
 		normalizeBelief();
-		alpha_ = beam_matching_score_sum/valid_beam_sum;
+		alpha_ = beam_matching_score_sum/use_beam_sum;
 		// ROS_INFO("ALPHA: %f / %f", alpha_, alpha_threshold_);
 		if(alpha_ < alpha_threshold_){
 			ROS_INFO("RESET");
