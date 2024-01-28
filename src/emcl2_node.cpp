@@ -79,13 +79,15 @@ void EMcl2Node::initPF(void)
 
 	bool handle_unknown_obstacles;
 	int observation_range;
+	double sampling_rate;
 	private_nh_.param("handle_unknown_obstacles", handle_unknown_obstacles, true);
 	private_nh_.param("observation_range", observation_range, 30);
+	private_nh_.param("sampling_rate", sampling_rate, 0.1);
 
 	pf_.reset(new ExpResetMcl2(init_pose, num_particles, scan, om, map,
 				alpha_th, ex_rad_pos, ex_rad_ori,
 				extraction_rate, range_threshold, sensor_reset,
-				handle_unknown_obstacles, observation_range));
+				handle_unknown_obstacles, observation_range, sampling_rate));
 }
 
 std::shared_ptr<OdomModel> EMcl2Node::initOdometry(void)

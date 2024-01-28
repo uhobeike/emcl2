@@ -17,7 +17,7 @@ ExpResetMcl2::ExpResetMcl2(const Pose &p, int num, const Scan &scan,
 				double expansion_radius_position, double expansion_radius_orientation,
 				double extraction_rate, double range_threshold,
 				bool sensor_reset,
-				bool handle_unknown_obstacles, int observation_range)
+				bool handle_unknown_obstacles, int observation_range, double sampling_rate)
 	: alpha_threshold_(alpha_th), 
 	  expansion_radius_position_(expansion_radius_position),
 	  expansion_radius_orientation_(expansion_radius_orientation),
@@ -26,7 +26,7 @@ ExpResetMcl2::ExpResetMcl2(const Pose &p, int num, const Scan &scan,
 	  sensor_reset_(sensor_reset),
 	  handle_unknown_obstacles_(handle_unknown_obstacles),
 	  observation_range_(observation_range),
-	  Mcl::Mcl(p, num, scan, odom_model, map, handle_unknown_obstacles, observation_range)
+	  Mcl::Mcl(p, num, scan, odom_model, map, handle_unknown_obstacles, observation_range, sampling_rate)
 {
 }
 

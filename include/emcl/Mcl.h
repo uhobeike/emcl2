@@ -24,7 +24,7 @@ public:
 	Mcl(const Pose &p, int num, const Scan &scan,
 			const std::shared_ptr<OdomModel> &odom_model,
 			const std::shared_ptr<LikelihoodFieldMap> &map,
-			bool handle_unknown_obstacles, double observation_range);
+			bool handle_unknown_obstacles, double observation_range, double sampling_rate);
 	~Mcl();
 
 	std::vector<Particle> particles_;
@@ -49,6 +49,7 @@ public:
 
 	bool handle_unknown_obstacles_;
 	int observation_range_;
+	double sampling_rate_;
 protected:
 	Pose *last_odom_;
 	Pose *prev_odom_;

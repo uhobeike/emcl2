@@ -18,7 +18,7 @@ public:
 			double expansion_radius_position, double expansion_radius_orientation,
 			double extraction_rate, double successive_penetration_threshold,
 			bool sensor_reset,
-			bool handle_unknown_obstacles, int observation_range);
+			bool handle_unknown_obstacles, int observation_range, double sampling_rate);
 	~ExpResetMcl2();
 
 	void sensorUpdate(double lidar_x, double lidar_y, double lidar_t, bool inv);

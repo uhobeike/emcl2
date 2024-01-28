@@ -49,16 +49,6 @@ double Particle::likelihood(LikelihoodFieldMap *map, Scan &scan, int &use_beam_s
 	double ans = 0.0;
 
 	if(scan.observation_range_middle_){		
-		for(int i=scan.observation_range_end_;i<scan.observation_range_begin_;i+=scan.scan_increment_){			
-			uint16_t a = scan.directions_16bit_[i] + t + lidar_yaw;
-			double lx = lidar_x + scan.ranges_[i] * Mcl::cos_[a];
-			double ly = lidar_y + scan.ranges_[i] * Mcl::sin_[a];
-
-			ans += map->likelihood(lx, ly);
-			use_beam_sum++;
-		}
-	}
-	else {
 		for(int i=0;i<scan.observation_range_begin_;i+=scan.scan_increment_){
 			uint16_t a = scan.directions_16bit_[i] + t + lidar_yaw;
 			double lx = lidar_x + scan.ranges_[i] * Mcl::cos_[a];
@@ -69,6 +59,16 @@ double Particle::likelihood(LikelihoodFieldMap *map, Scan &scan, int &use_beam_s
 		}
 
 		for(int i=scan.observation_range_end_;i<scan.ranges_.size();i+=scan.scan_increment_){
+			uint16_t a = scan.directions_16bit_[i] + t + lidar_yaw;
+			double lx = lidar_x + scan.ranges_[i] * Mcl::cos_[a];
+			double ly = lidar_y + scan.ranges_[i] * Mcl::sin_[a];
+
+			ans += map->likelihood(lx, ly);
+			use_beam_sum++;
+		}
+	}
+	else {
+		for(int i=scan.observation_range_begin_;i<scan.observation_range_end_;i+=scan.scan_increment_){			
 			uint16_t a = scan.directions_16bit_[i] + t + lidar_yaw;
 			double lx = lidar_x + scan.ranges_[i] * Mcl::cos_[a];
 			double ly = lidar_y + scan.ranges_[i] * Mcl::sin_[a];

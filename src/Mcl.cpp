@@ -12,9 +12,9 @@ namespace emcl2 {
 Mcl::Mcl(const Pose &p, int num, const Scan &scan,
 		const std::shared_ptr<OdomModel> &odom_model,
 		const std::shared_ptr<LikelihoodFieldMap> &map,
-		bool handle_unknown_obstacles, double observation_range)
+		bool handle_unknown_obstacles, double observation_range, double sampling_rate)
 	: last_odom_(NULL), prev_odom_(NULL),
-	  handle_unknown_obstacles_(handle_unknown_obstacles), observation_range_(observation_range)
+	  handle_unknown_obstacles_(handle_unknown_obstacles), observation_range_(observation_range), sampling_rate_(sampling_rate)
 {
 	odom_model_ = move(odom_model);
 	map_ = move(map);
@@ -77,14 +77,13 @@ void Mcl::resampling(void)
 	if(handle_unknown_obstacles_){
 		int min_particles_size = 1;
 		int max_particles_size = particles_.size();
-		int sampling_rate = 0.1;
 		
 		std::random_device rd;
 		std::mt19937 eng(rd());
 		std::uniform_int_distribution<int> distr(min_particles_size, max_particles_size);
 		std::vector<int> result;
 
-		for (int i=0;i<max_particles_size*sampling_rate;i++){
+		for (int i=0;i<max_particles_size*sampling_rate_;i++){
 			result.push_back(distr(eng));
 		}
 
@@ -314,13 +313,14 @@ Scan Mcl::createObservationRange(Scan scan)
   std::uniform_int_distribution<> dist_angle(0, scan.ranges_.size());
 
   scan.observation_range_begin_ = dist_angle(engine);
-
-  scan.observation_range_end_ = scan.observation_range_begin_ + 320;
+  scan.observation_range_end_ = scan.observation_range_begin_ + observation_range_;
 
   scan.observation_range_middle_ = false;
   if (scan.observation_range_end_ >= scan.ranges_.size()){
     scan.observation_range_middle_ = true;
-    scan.observation_range_end_ = scan.observation_range_end_ - static_cast<int>(scan.ranges_.size()); 
+    auto observation_range_begin = scan.observation_range_end_ - static_cast<int>(scan.ranges_.size());
+	scan.observation_range_end_ = scan.observation_range_begin_;
+	scan.observation_range_begin_ = observation_range_begin;
   }
 
   return scan;
