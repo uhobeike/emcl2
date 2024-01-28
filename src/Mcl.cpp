@@ -307,23 +307,24 @@ void Mcl::simpleReset(void)
 
 Scan Mcl::createObservationRange(Scan scan)
 {
-  std::random_device seed_gen;
-  std::default_random_engine engine(seed_gen());
+	std::random_device seed_gen;
+	std::default_random_engine engine(seed_gen());
 
-  std::uniform_int_distribution<> dist_angle(0, scan.ranges_.size());
+	std::uniform_int_distribution<> dist_angle(0, scan.ranges_.size());
 
-  scan.observation_range_begin_ = dist_angle(engine);
-  scan.observation_range_end_ = scan.observation_range_begin_ + observation_range_;
+	auto observation_range = observation_range_ * round(M_PI/180/scan.angle_increment_);
+	scan.observation_range_begin_ = dist_angle(engine);
+	scan.observation_range_end_ = scan.observation_range_begin_ + observation_range;
 
-  scan.observation_range_middle_ = false;
-  if (scan.observation_range_end_ >= scan.ranges_.size()){
-    scan.observation_range_middle_ = true;
-    auto observation_range_begin = scan.observation_range_end_ - static_cast<int>(scan.ranges_.size());
-	scan.observation_range_end_ = scan.observation_range_begin_;
-	scan.observation_range_begin_ = observation_range_begin;
-  }
+	scan.observation_range_middle_ = false;
+	if (scan.observation_range_end_ >= scan.ranges_.size()){
+		scan.observation_range_middle_ = true;
+		auto observation_range_begin = scan.observation_range_end_ - static_cast<int>(scan.ranges_.size());
+		scan.observation_range_end_ = scan.observation_range_begin_;
+		scan.observation_range_begin_ = observation_range_begin;
+	}
 
-  return scan;
+	return scan;
 }
 
 }
