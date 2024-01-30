@@ -19,8 +19,9 @@ EMcl2Node::EMcl2Node() : private_nh_("~")
 
 	private_nh_.param("odom_freq", odom_freq_, 20);
 
-	init_request_ = false;
+	init_request_ = true;
 	simple_reset_request_ = false;
+	scan_receive_ = false;
 }
 
 EMcl2Node::~EMcl2Node()
@@ -61,6 +62,9 @@ void EMcl2Node::initPF(void)
 	private_nh_.param("initial_pose_x", init_pose.x_, 0.0);
 	private_nh_.param("initial_pose_y", init_pose.y_, 0.0);
 	private_nh_.param("initial_pose_a", init_pose.t_, 0.0);
+	init_x_ = init_pose.x_;
+	init_y_ = init_pose.y_;
+	init_t_ = init_pose.t_;
 
 	int num_particles;
 	double alpha_th;
@@ -76,9 +80,17 @@ void EMcl2Node::initPF(void)
 	private_nh_.param("range_threshold", range_threshold, 0.1);
 	private_nh_.param("sensor_reset", sensor_reset, false);
 
+	bool handle_unknown_obstacles;
+	int observation_range;
+	double sampling_rate;
+	private_nh_.param("handle_unknown_obstacles", handle_unknown_obstacles, true);
+	private_nh_.param("observation_range", observation_range, 30);
+	private_nh_.param("sampling_rate", sampling_rate, 0.1);
+
 	pf_.reset(new ExpResetMcl2(init_pose, num_particles, scan, om, map,
 				alpha_th, ex_rad_pos, ex_rad_ori,
-				extraction_rate, range_threshold, sensor_reset));
+				extraction_rate, range_threshold, sensor_reset,
+				handle_unknown_obstacles, observation_range, sampling_rate));
 }
 
 std::shared_ptr<OdomModel> EMcl2Node::initOdometry(void)
@@ -116,6 +128,7 @@ void EMcl2Node::cbScan(const sensor_msgs::LaserScan::ConstPtr &msg)
 	scan_time_stamp_ = msg->header.stamp;
 	scan_frame_id_ = msg->header.frame_id;
 	pf_->setScan(msg);
+	scan_receive_ = true;
 }
 
 void EMcl2Node::initialPoseReceived(const geometry_msgs::PoseWithCovarianceStampedConstPtr& msg)
@@ -128,6 +141,8 @@ void EMcl2Node::initialPoseReceived(const geometry_msgs::PoseWithCovarianceStamp
 
 void EMcl2Node::loop(void)
 {
+	if (not scan_receive_)
+		return ;
 	if(init_request_){
 		pf_->initialize(init_x_, init_y_, init_t_);
 		init_request_ = false;
@@ -324,8 +339,6 @@ int main(int argc, char **argv)
 		ros::spinOnce();
 		loop_rate.sleep();
 	}
-
-	ros::spin();
 
 	return 0;
 }

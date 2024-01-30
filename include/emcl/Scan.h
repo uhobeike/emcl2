@@ -20,6 +20,10 @@ public:
 	double range_max_;
 	double range_min_;
 
+	int observation_range_begin_;
+	bool observation_range_middle_;
+	int observation_range_end_;
+
 	double lidar_pose_x_;
 	double lidar_pose_y_;
 	double lidar_pose_yaw_;
@@ -28,6 +32,7 @@ public:
 	std::vector<uint16_t> directions_16bit_;
 
 	Scan& operator=(const Scan &s);
+	Scan& operator+=(const Scan &s);
 	int countValidBeams(double *rate = NULL);
 	bool valid(double range);
 };

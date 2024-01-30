@@ -57,6 +57,7 @@ private:
 	bool init_request_;
 	bool simple_reset_request_;
 	double init_x_, init_y_, init_t_;
+	bool scan_receive_;
 
 	void publishPose(double x, double y, double t,
 			double x_dev, double y_dev, double t_dev,

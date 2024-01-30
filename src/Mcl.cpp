@@ -11,8 +11,10 @@ namespace emcl2 {
 
 Mcl::Mcl(const Pose &p, int num, const Scan &scan,
 		const std::shared_ptr<OdomModel> &odom_model,
-		const std::shared_ptr<LikelihoodFieldMap> &map)
-	: last_odom_(NULL), prev_odom_(NULL)
+		const std::shared_ptr<LikelihoodFieldMap> &map,
+		bool handle_unknown_obstacles, double observation_range, double sampling_rate)
+	: last_odom_(NULL), prev_odom_(NULL),
+	  handle_unknown_obstacles_(handle_unknown_obstacles), observation_range_(observation_range), sampling_rate_(sampling_rate)
 {
 	odom_model_ = move(odom_model);
 	map_ = move(map);
@@ -69,6 +71,28 @@ void Mcl::resampling(void)
 
 	for(int i=0; i<particles_.size(); i++)
 		particles_[i] = old[chosen[i]];
+
+	if(handle_unknown_obstacles_){
+		int min_particles_size = 1;
+		int max_particles_size = particles_.size();
+		
+		std::random_device rd;
+		std::mt19937 eng(rd());
+		std::uniform_int_distribution<int> distr(min_particles_size, max_particles_size);
+		std::vector<int> result;
+
+		for (int i=0;i<max_particles_size*sampling_rate_;i++){
+			result.push_back(distr(eng));
+		}
+
+		int random_scan_cnt = 0;
+		for(auto &p : particles_){
+			random_scan_cnt++;
+			if (result.end() != std::find(result.begin(), result.end(), random_scan_cnt)){
+				p.s_ = createObservationRange(p.s_);
+			}
+		}
+	}
 }
 
 void Mcl::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, bool inv)
@@ -247,13 +271,23 @@ void Mcl::resetWeight(void)
 		p.w_ = 1.0/particles_.size();
 }
 
+void Mcl::resetObservationRange(Scan scan)
+{
+	for(auto &p : particles_)
+		p.s_ = createObservationRange(scan);
+}
+
 void Mcl::initialize(double x, double y, double t)
 {
 	Pose new_pose(x, y, t);
+	Scan scan = scan_;
 	for(auto &p : particles_)
 		p.p_ = new_pose;
 
 	resetWeight();
+	
+	if (handle_unknown_obstacles_)
+		resetObservationRange(scan);
 }
 
 void Mcl::simpleReset(void)
@@ -265,6 +299,28 @@ void Mcl::simpleReset(void)
 		particles_[i].p_ = poses[i];
 		particles_[i].w_ = 1.0/particles_.size();
 	}
+}
+
+Scan Mcl::createObservationRange(Scan scan)
+{
+	std::random_device seed_gen;
+	std::default_random_engine engine(seed_gen());
+
+	std::uniform_int_distribution<> dist_angle(0, scan.ranges_.size());
+
+	auto observation_range = observation_range_ * round(M_PI/180/scan.angle_increment_);
+	scan.observation_range_begin_ = dist_angle(engine);
+	scan.observation_range_end_ = scan.observation_range_begin_ + observation_range;
+
+	scan.observation_range_middle_ = false;
+	if (scan.observation_range_end_ >= scan.ranges_.size()){
+		scan.observation_range_middle_ = true;
+		auto observation_range_begin = scan.observation_range_end_ - static_cast<int>(scan.ranges_.size());
+		scan.observation_range_end_ = scan.observation_range_begin_;
+		scan.observation_range_begin_ = observation_range_begin;
+	}
+
+	return scan;
 }
 
 }
